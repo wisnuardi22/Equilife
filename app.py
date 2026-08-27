@@ -382,7 +382,7 @@ with st.expander(T["setting_title"], expanded=False):
                 "Category_Name": st.column_config.TextColumn("Kategori Pos", disabled=True),
                 "Type": st.column_config.TextColumn("Tipe", disabled=True),
                 "Target_Percent": st.column_config.NumberColumn("Target (%)", format="%.2f %%", min_value=0.0, max_value=100.0, step=0.1),
-                "Target_Budget": st.column_config.NumberColumn(T["target"], format="Rp %d", disabled=True)
+                "Target_Budget": st.column_config.NumberColumn(T["target"], format="Rp %,d", disabled=True)
             },
             hide_index=True,
             use_container_width=True
@@ -472,15 +472,20 @@ if not tx_df.empty:
     merged_budget = pd.merge(merged_budget, actual_spending, on="Category_Code", how="left").fillna(0)
     merged_budget.rename(columns={"Amount": "Actual_Spending"}, inplace=True)
     merged_budget["Remaining"] = merged_budget["Target_Budget"] - merged_budget["Actual_Spending"]
-    merged_budget["Status"] = merged_budget["Remaining"].apply(lambda x: T["status_safe"] if x >= 0 else T["status_over"])
+    
+    # Logika Status Diperbaiki: Terpenuhi jika Aktual <= Target, Melampaui jika Aktual > Target
+    merged_budget["Status"] = merged_budget.apply(
+        lambda r: T["status_safe"] if r["Actual_Spending"] <= r["Target_Budget"] else T["status_over"], 
+        axis=1
+    )
 
     st.dataframe(
         merged_budget[["Category_Code", "Category_Name", "Target_Percent", "Target_Budget", "Actual_Spending", "Remaining", "Status"]],
         column_config={
             "Target_Percent": st.column_config.NumberColumn("Target (%)", format="%.2f %%"),
-            "Target_Budget": st.column_config.NumberColumn(T["target"], format="Rp %d"),
-            "Actual_Spending": st.column_config.NumberColumn(T["actual"], format="Rp %d"),
-            "Remaining": st.column_config.NumberColumn(T["remaining"], format="Rp %d"),
+            "Target_Budget": st.column_config.NumberColumn(T["target"], format="Rp %,d"),
+            "Actual_Spending": st.column_config.NumberColumn(T["actual"], format="Rp %,d"),
+            "Remaining": st.column_config.NumberColumn(T["remaining"], format="Rp %,d"),
             "Status": st.column_config.TextColumn(T["status"]),
         },
         hide_index=True,
