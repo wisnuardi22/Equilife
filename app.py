@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import os
+import re
 from datetime import datetime
 from PIL import Image
 
@@ -20,26 +21,25 @@ st.set_page_config(
     page_icon=logo_img
 )
 
-# --- CUSTOM MODERN CSS STYLING ---
+# --- HELPER PARSER REBUAN ---
+def format_thousand(val):
+    clean = re.sub(r'[^\d]', '', str(val))
+    if not clean:
+        return "0"
+    return f"{int(clean):,.0f}".replace(",", ".")
+
+def parse_thousand(val_str):
+    clean = re.sub(r'[^\d]', '', str(val_str))
+    return int(clean) if clean else 0
+
+# --- CUSTOM MODERN CSS ---
 st.markdown("""
 <style>
-    /* Main Background & Font Styling */
     .stApp {
         background-color: #F8FAFC;
         font-family: 'Inter', sans-serif;
     }
     
-    /* Header Container Styling */
-    .main-header {
-        background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
-        padding: 24px;
-        border-radius: 16px;
-        color: white;
-        margin-bottom: 24px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-    }
-    
-    /* Metric Cards Styling */
     [data-testid="stMetricValue"] {
         font-weight: 700;
         color: #0F172A;
@@ -51,41 +51,33 @@ st.markdown("""
         padding: 16px;
         border-radius: 12px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-        transition: transform 0.2s ease;
     }
     
-    div[data-testid="metric-container"]:hover {
-        transform: translateY(-2px);
-        border-color: #00A86B;
-    }
-    
-    /* Buttons Customization */
     .stButton>button {
         border-radius: 8px;
         font-weight: 600;
-        transition: all 0.3s ease;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# --- HEADER & LANGUAGE SELECTOR (TOP RIGHT) ---
-col_logo, col_title, col_lang = st.columns([1, 8, 3])
+# --- HEADER & LANGUAGE SELECTOR (RINGKAS: ID / EN) ---
+col_logo, col_title, col_lang = st.columns([1, 8, 2])
 
 with col_logo:
     if isinstance(logo_img, Image.Image):
         st.image(logo_img, width=65)
 
 with col_lang:
-    lang_choice = st.selectbox("🌐 Language / Bahasa", ["Bahasa Indonesia 🇮🇩", "English 🇬🇧"], label_visibility="collapsed")
+    lang_choice = st.selectbox("Language", ["ID", "EN"], label_visibility="collapsed")
 
-# Kamus Penerjemah Teks UI (Status Elegan)
+# Kamus Penerjemah Teks UI
 T = {
-    "Bahasa Indonesia 🇮🇩": {
+    "ID": {
         "title": "Equilife — Personal Financial Balance",
         "caption": "Sistem Pengendalian Anggaran (Budget vs Actual), Multi-Rekening & Tingkat Konsumtif",
         "wallets": "💳 Saldo Rekening / Dompet Riil",
-        "hide_bal": "🙈 Sembunyikan Saldo",
-        "show_bal": "👁️ Tampilkan Saldo",
+        "hide_bal": "Sembunyikan Saldo",
+        "show_bal": "Tampilkan Saldo",
         "add_tx": "➕ **Tambah Transaksi Baru (Input Cepat)**",
         "tx_type": "Jenis Transaksi",
         "expense": "Pengeluaran",
@@ -105,8 +97,8 @@ T = {
         "correct_title": "✏️ **Koreksi Transaksi (Edit / Hapus)**",
         "correct_desc": "Pilih transaksi di bawah ini untuk mengedit atau menghapusnya (saldo rekening akan otomatis disesuaikan):",
         "select_tx": "Pilih Transaksi:",
-        "btn_edit": "✏️ Edit Transaksi Ini",
-        "btn_del": "❌ Hapus Transaksi Ini",
+        "btn_edit": "Edit Transaksi Ini",
+        "btn_del": "Hapus Transaksi Ini",
         "success_del": "berhasil dihapus dan saldo rekening dikembalikan!",
         "success_edit": "berhasil diperbarui dan saldo telah disesuaikan!",
         "save_changes": "💾 Simpan Perubahan Edit",
@@ -130,12 +122,12 @@ T = {
         "pie_title": "Proporsi Alokasi Pengeluaran",
         "no_data": "Belum ada data transaksi. Silakan input transaksi pertama kamu di atas!"
     },
-    "English 🇬🇧": {
+    "EN": {
         "title": "Equilife — Personal Financial Balance",
         "caption": "Your personal financial dashboard to track income, expenses, and savings.",
         "wallets": "💳 Account Balances / Real Wallets",
-        "hide_bal": "🙈 Hide Balance",
-        "show_bal": "👁️ Show Balance",
+        "hide_bal": "Hide Balance",
+        "show_bal": "Show Balance",
         "add_tx": "➕ **Add New Transaction (Quick Input)**",
         "tx_type": "Transaction Type",
         "expense": "Expense",
@@ -155,8 +147,8 @@ T = {
         "correct_title": "✏️ **Transaction Correction (Edit / Delete)**",
         "correct_desc": "Select a transaction below to edit or delete it (account balances will automatically adjust):",
         "select_tx": "Select Transaction:",
-        "btn_edit": "✏️ Edit This Transaction",
-        "btn_del": "❌ Delete This Transaction",
+        "btn_edit": "Edit This Transaction",
+        "btn_del": "Delete This Transaction",
         "success_del": "deleted successfully and balance restored!",
         "success_edit": "updated successfully and balance adjusted!",
         "save_changes": "💾 Save Edited Changes",
@@ -273,7 +265,7 @@ def update_transaction(updated_tx):
 
 accounts_df, budget_df, tx_df = load_data()
 
-# --- MODUL 1: WALLET CARDS ---
+# --- MODUL 1: WALLET CARDS (TANPA IKON PADA TOMBOL) ---
 if "show_balance" not in st.session_state:
     st.session_state.show_balance = True
 
@@ -294,14 +286,13 @@ for i, row in accounts_df.iterrows():
 
 st.markdown("---")
 
-# --- MODUL 2: FORM INPUT TRANSAKSI ---
+# --- MODUL 2: FORM INPUT TRANSAKSI (FORMAT RIBUAN OTOMATIS) ---
 with st.expander(T["add_tx"], expanded=True):
     c_type1, c_type2 = st.columns([1, 2])
     tx_type_input = c_type1.selectbox(T["tx_type"], [T["expense"], T["income"], T["transfer"]])
 
     with st.form("add_tx_form", clear_on_submit=True):
         c1, c2 = st.columns(2)
-        # 1. Format Tanggal dd/mm/yyyy
         tx_date = c1.date_input(T["date"], datetime.now(), format="DD/MM/YYYY")
         
         acc_list = accounts_df["Account_Name"].tolist()
@@ -325,15 +316,16 @@ with st.expander(T["add_tx"], expanded=True):
             c4.text_input(T["category"], value=T["not_needed"], disabled=True)
             cat_code = "-"
         
-        # 2. Input Nominal Full Amount & Format Titik Otomatis
-        amount = c5.number_input(T["amount"], min_value=0, value=50000, step=50000)
-        c5.caption(f"Terbaca: **Rp {amount:,.0f}**.replace(',', '.')")
+        # Text Input dengan pemisah ribuan otomatis
+        raw_amount_input = c5.text_input(T["amount"], value="50.000")
+        formatted_amount_str = format_thousand(raw_amount_input)
         
         notes = c6.text_input(T["notes"], "")
         
         submit = st.form_submit_button(T["save"])
         
         if submit:
+            final_amount = parse_thousand(formatted_amount_str)
             tx_id = f"TX-{len(tx_df)+1:04d}"
             new_record = {
                 "TX_ID": tx_id,
@@ -342,7 +334,7 @@ with st.expander(T["add_tx"], expanded=True):
                 "Account_From": acc_from,
                 "Account_To": acc_to,
                 "Category_Code": str(cat_code),
-                "Amount": amount,
+                "Amount": final_amount,
                 "Notes": notes
             }
             save_transaction(new_record)
@@ -370,29 +362,28 @@ if not tx_df.empty:
             st.success(f"{selected_tx_id} {T['success_del']}")
             st.rerun()
 
-        # 4. Form Edit Aktif & Responsif
         if st.session_state.edit_active_id:
             tx_row = tx_df[tx_df["TX_ID"] == st.session_state.edit_active_id].iloc[0]
             st.markdown("---")
-            st.markdown(f"#### ✏️ Edit Form: **{st.session_state.edit_active_id}**")
+            st.markdown(f"#### Edit Form: **{st.session_state.edit_active_id}**")
             
             with st.form("edit_tx_form"):
                 ec1, ec2 = st.columns(2)
                 
-                # Handling format tanggal string / date
                 try:
                     init_date = datetime.strptime(str(tx_row["Date"]), "%d/%m/%Y")
                 except Exception:
                     init_date = datetime.now()
                     
                 e_date = ec1.date_input(T["date"], init_date, format="DD/MM/YYYY")
-                e_amount = ec2.number_input(T["amount"], min_value=0, value=int(tx_row["Amount"]), step=50000)
-                ec2.caption(f"Terbaca: **Rp {e_amount:,.0f}**.replace(',', '.')")
                 
+                # Edit Nominal Format Ribuan
+                e_amount_input = ec2.text_input(T["amount"], value=format_thousand(tx_row["Amount"]))
                 e_notes = st.text_input(T["notes"], value=str(tx_row["Notes"]))
                 e_submit = st.form_submit_button(T["save_changes"])
                 
                 if e_submit:
+                    e_final_amount = parse_thousand(e_amount_input)
                     updated_record = {
                         "TX_ID": st.session_state.edit_active_id,
                         "Date": e_date.strftime("%d/%m/%Y"),
@@ -400,7 +391,7 @@ if not tx_df.empty:
                         "Account_From": tx_row["Account_From"],
                         "Account_To": tx_row["Account_To"],
                         "Category_Code": str(tx_row["Category_Code"]),
-                        "Amount": e_amount,
+                        "Amount": e_final_amount,
                         "Notes": e_notes
                     }
                     update_transaction(updated_record)
@@ -410,7 +401,7 @@ if not tx_df.empty:
 
 st.markdown("---")
 
-# --- MODUL 4: TABEL MONITORING ANGGARAN (BUDGET VS ACTUAL) ---
+# --- MODUL 4: TABEL MONITORING ANGGARAN ---
 st.markdown(f"### {T['budget_vs_act']}")
 
 if not tx_df.empty:
@@ -422,8 +413,6 @@ if not tx_df.empty:
     merged_budget = pd.merge(merged_budget, actual_spending, on="Category_Code", how="left").fillna(0)
     merged_budget.rename(columns={"Amount": "Actual_Spending"}, inplace=True)
     merged_budget["Remaining"] = merged_budget["Target_Budget"] - merged_budget["Actual_Spending"]
-    
-    # 5. Status Elegan
     merged_budget["Status"] = merged_budget["Remaining"].apply(lambda x: T["status_safe"] if x >= 0 else T["status_over"])
 
     st.dataframe(
@@ -442,7 +431,7 @@ else:
 
 st.markdown("---")
 
-# --- MODUL 5: DASHBOARD INTERAKTIF & ANALISIS KONSUMTIF (MODERN 3D/DONUT) ---
+# --- MODUL 5: DASHBOARD INTERAKTIF & ANALISIS KONSUMTIF ---
 st.markdown(f"### {T['dash_title']}")
 
 if not tx_df.empty:
@@ -478,7 +467,6 @@ if not tx_df.empty:
         st.metric(T["life_metric"], f"{ratio_konsumtif:.1f}%", f"Status: {status_color}")
         
     with c_chart:
-        # 6. Modern Donut Chart dengan Modern Palette
         chart_data = dash_budget.groupby("Type")["Actual_Spending"].sum().reset_index()
         fig = px.pie(
             chart_data, 
@@ -486,7 +474,7 @@ if not tx_df.empty:
             names="Type", 
             title=T["pie_title"], 
             color="Type",
-            hole=0.55, # Donut Chart Style
+            hole=0.55,
             color_discrete_map={"Konsumtif": "#E11D48", "Non-Konsumtif": "#00A86B"}
         )
         fig.update_traces(textposition='inside', textinfo='percent+label', marker=dict(line=dict(color='#FFFFFF', width=2)))
