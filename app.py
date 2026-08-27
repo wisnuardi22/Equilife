@@ -6,7 +6,7 @@ import re
 from datetime import datetime
 from PIL import Image
 
-# --- CONFIG & THEME ---
+# --- CONFIG ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 logo_path = os.path.join(BASE_DIR, "image", "logo.png")
 
@@ -21,46 +21,93 @@ st.set_page_config(
     page_icon=logo_img
 )
 
-# --- HELPER PARSER REBUAN ---
-def format_thousand(val):
-    clean = re.sub(r'[^\d]', '', str(val))
-    if not clean:
-        return "0"
-    return f"{int(clean):,.0f}".replace(",", ".")
-
-def parse_thousand(val_str):
-    clean = re.sub(r'[^\d]', '', str(val_str))
-    return int(clean) if clean else 0
-
-# --- CUSTOM MODERN CSS ---
+# --- FORCE COLOR PALETTE INJECTION (EMERALD & SLATE THEME) ---
 st.markdown("""
 <style>
-    .stApp {
-        background-color: #F8FAFC;
-        font-family: 'Inter', sans-serif;
+    /* Global Background */
+    .stApp, [data-testid="stAppViewContainer"] {
+        background-color: #F1F5F9 !important;
+        font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+    }
+    
+    /* Primary Header Container */
+    .header-card {
+        background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+        padding: 24px 30px;
+        border-radius: 16px;
+        color: #FFFFFF;
+        box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.25);
+        margin-bottom: 25px;
+    }
+    
+    .header-title {
+        color: #00A884 !important;
+        font-size: 28px;
+        font-weight: 800;
+        margin: 0;
+    }
+
+    .header-subtitle {
+        color: #94A3B8;
+        font-size: 14px;
+        margin-top: 4px;
+    }
+    
+    /* Wallet & Metric Cards Styling */
+    div[data-testid="metric-container"] {
+        background-color: #FFFFFF !important;
+        border: 2px solid #E2E8F0 !important;
+        border-top: 4px solid #00A884 !important;
+        padding: 18px !important;
+        border-radius: 14px !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important;
     }
     
     [data-testid="stMetricValue"] {
-        font-weight: 700;
-        color: #0F172A;
+        color: #0F172A !important;
+        font-weight: 800 !important;
+        font-size: 22px !important;
     }
     
-    div[data-testid="metric-container"] {
-        background-color: #FFFFFF;
-        border: 1px solid #E2E8F0;
-        padding: 16px;
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    [data-testid="stMetricLabel"] {
+        color: #475569 !important;
+        font-weight: 600 !important;
     }
     
+    /* Primary Buttons Styling */
     .stButton>button {
-        border-radius: 8px;
-        font-weight: 600;
+        background-color: #007A63 !important;
+        color: #FFFFFF !important;
+        border: none !important;
+        border-radius: 10px !important;
+        padding: 10px 20px !important;
+        font-weight: 700 !important;
+        transition: all 0.3s ease !important;
+        box-shadow: 0 4px 12px rgba(0, 122, 99, 0.2) !important;
+    }
+
+    .stButton>button:hover {
+        background-color: #00A884 !important;
+        transform: translateY(-2px) !important;
+    }
+
+    /* Expander Containers */
+    .stExpander {
+        background-color: #FFFFFF !important;
+        border-radius: 14px !important;
+        border: 1px solid #E2E8F0 !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02) !important;
+    }
+
+    /* Table Headers */
+    .stDataFrame {
+        border-radius: 12px !important;
+        overflow: hidden;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# --- HEADER & LANGUAGE SELECTOR (RINGKAS: ID / EN) ---
+# --- HEADER & LANGUAGE SELECTOR (ID / EN) ---
 col_logo, col_title, col_lang = st.columns([1, 8, 2])
 
 with col_logo:
@@ -70,7 +117,7 @@ with col_logo:
 with col_lang:
     lang_choice = st.selectbox("Language", ["ID", "EN"], label_visibility="collapsed")
 
-# Kamus Penerjemah Teks UI
+# Kamus Teks UI
 T = {
     "ID": {
         "title": "Equilife — Personal Financial Balance",
@@ -175,8 +222,12 @@ T = {
 }[lang_choice]
 
 with col_title:
-    st.title(T["title"])
-    st.caption(T["caption"])
+    st.markdown(f"""
+    <div class="header-card">
+        <h1 class="header-title">{T['title']}</h1>
+        <div class="header-subtitle">{T['caption']}</div>
+    </div>
+    """, unsafe_allow_html=True)
 
 DB_FILE = os.path.join(BASE_DIR, "database.xlsx")
 
@@ -265,7 +316,7 @@ def update_transaction(updated_tx):
 
 accounts_df, budget_df, tx_df = load_data()
 
-# --- MODUL 1: WALLET CARDS (TANPA IKON PADA TOMBOL) ---
+# --- MODUL 1: WALLET CARDS ---
 if "show_balance" not in st.session_state:
     st.session_state.show_balance = True
 
@@ -286,7 +337,7 @@ for i, row in accounts_df.iterrows():
 
 st.markdown("---")
 
-# --- MODUL 2: FORM INPUT TRANSAKSI (FORMAT RIBUAN OTOMATIS) ---
+# --- MODUL 2: FORM INPUT TRANSAKSI ---
 with st.expander(T["add_tx"], expanded=True):
     c_type1, c_type2 = st.columns([1, 2])
     tx_type_input = c_type1.selectbox(T["tx_type"], [T["expense"], T["income"], T["transfer"]])
@@ -316,16 +367,15 @@ with st.expander(T["add_tx"], expanded=True):
             c4.text_input(T["category"], value=T["not_needed"], disabled=True)
             cat_code = "-"
         
-        # Text Input dengan pemisah ribuan otomatis
-        raw_amount_input = c5.text_input(T["amount"], value="50.000")
-        formatted_amount_str = format_thousand(raw_amount_input)
+        # Numeric input dengan kelipatan 10.000 & penjelas ribuan yang selalu sinkron
+        amount = c5.number_input(T["amount"], min_value=0, value=50000, step=10000)
+        c5.markdown(f"Format Ribuan: **Rp {amount:,.0f}**".replace(",", "."))
         
         notes = c6.text_input(T["notes"], "")
         
         submit = st.form_submit_button(T["save"])
         
         if submit:
-            final_amount = parse_thousand(formatted_amount_str)
             tx_id = f"TX-{len(tx_df)+1:04d}"
             new_record = {
                 "TX_ID": tx_id,
@@ -334,14 +384,14 @@ with st.expander(T["add_tx"], expanded=True):
                 "Account_From": acc_from,
                 "Account_To": acc_to,
                 "Category_Code": str(cat_code),
-                "Amount": final_amount,
+                "Amount": int(amount),
                 "Notes": notes
             }
             save_transaction(new_record)
             st.success(T["success_save"])
             st.rerun()
 
-# --- MODUL 3: KOREKSI TRANSAKSI (EDIT & HAPUS) ---
+# --- MODUL 3: KOREKSI TRANSAKSI ---
 if "edit_active_id" not in st.session_state:
     st.session_state.edit_active_id = None
 
@@ -376,14 +426,13 @@ if not tx_df.empty:
                     init_date = datetime.now()
                     
                 e_date = ec1.date_input(T["date"], init_date, format="DD/MM/YYYY")
+                e_amount = ec2.number_input(T["amount"], min_value=0, value=int(tx_row["Amount"]), step=10000)
+                ec2.markdown(f"Format Ribuan: **Rp {e_amount:,.0f}**".replace(",", "."))
                 
-                # Edit Nominal Format Ribuan
-                e_amount_input = ec2.text_input(T["amount"], value=format_thousand(tx_row["Amount"]))
                 e_notes = st.text_input(T["notes"], value=str(tx_row["Notes"]))
                 e_submit = st.form_submit_button(T["save_changes"])
                 
                 if e_submit:
-                    e_final_amount = parse_thousand(e_amount_input)
                     updated_record = {
                         "TX_ID": st.session_state.edit_active_id,
                         "Date": e_date.strftime("%d/%m/%Y"),
@@ -391,7 +440,7 @@ if not tx_df.empty:
                         "Account_From": tx_row["Account_From"],
                         "Account_To": tx_row["Account_To"],
                         "Category_Code": str(tx_row["Category_Code"]),
-                        "Amount": e_final_amount,
+                        "Amount": int(e_amount),
                         "Notes": e_notes
                     }
                     update_transaction(updated_record)
@@ -431,7 +480,7 @@ else:
 
 st.markdown("---")
 
-# --- MODUL 5: DASHBOARD INTERAKTIF & ANALISIS KONSUMTIF ---
+# --- MODUL 5: DASHBOARD INTERAKTIF (PALETTE MODERN) ---
 st.markdown(f"### {T['dash_title']}")
 
 if not tx_df.empty:
@@ -475,8 +524,8 @@ if not tx_df.empty:
             title=T["pie_title"], 
             color="Type",
             hole=0.55,
-            color_discrete_map={"Konsumtif": "#E11D48", "Non-Konsumtif": "#00A86B"}
+            color_discrete_map={"Konsumtif": "#E11D48", "Non-Konsumtif": "#00A884"}
         )
         fig.update_traces(textposition='inside', textinfo='percent+label', marker=dict(line=dict(color='#FFFFFF', width=2)))
-        fig.update_layout(margin=dict(t=40, b=20, l=20, r=20), showlegend=True)
+        fig.update_layout(margin=dict(t=40, b=20, l=20, r=20), showlegend=True, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
         st.plotly_chart(fig, use_container_width=True)
