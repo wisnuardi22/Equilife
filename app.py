@@ -33,16 +33,12 @@ with col_lang:
 T = {
     "ID": {
         "title": "Equilife — Personal Financial Balance",
-        "caption": "Sistem Pengendalian Anggaran (Budget vs Actual), Multi-Rekening & Pengaturan Target Dinamis",
+        "caption": "Sistem Pengendalian Anggaran (Budget vs Actual), Multi-Rekening & Target Berbasis Persentase/Nominal",
         "wallets": "💳 Saldo Rekening / Dompet Riil",
         "hide_bal": "Sembunyikan Saldo",
         "show_bal": "Tampilkan Saldo",
-        "setting_title": "⚙️ Pengaturan Target Anggaran & Sedekah",
-        "setting_desc": "Atur nominal target secara manual atau gunakan persentase dari total pemasukan untuk Zakat & Sedekah.",
-        "calc_mode": "Mode Hitung Zakat & Sedekah:",
-        "mode_manual": "Nominal Manual (Rp)",
-        "mode_percent": "Persentase dari Pemasukan (%)",
-        "input_percent": "Masukkan Persentase (%)",
+        "setting_title": "⚙️ Pengaturan Target Anggaran & Persentase (%)",
+        "setting_desc": "Atur target melalui Nominal (Rp) atau Persentase (%) dari total pemasukan. Keduanya saling menyesuaikan secara otomatis.",
         "save_setting": "Simpan Pengaturan Target",
         "success_setting": "Pengaturan target anggaran berhasil diperbarui!",
         "add_tx": "➕ Tambah Transaksi Baru (Input Cepat)",
@@ -91,16 +87,12 @@ T = {
     },
     "EN": {
         "title": "Equilife — Personal Financial Balance",
-        "caption": "Your personal financial dashboard to track income, expenses, and dynamic budget settings.",
+        "caption": "Your personal financial dashboard to track income, expenses, and flexible budget settings.",
         "wallets": "💳 Account Balances / Real Wallets",
         "hide_bal": "Hide Balance",
         "show_bal": "Show Balance",
-        "setting_title": "⚙️ Budget Target & Charity Settings",
-        "setting_desc": "Set manual target amounts or use a percentage of total income for Zakat & Charity.",
-        "calc_mode": "Zakat & Charity Calculation Mode:",
-        "mode_manual": "Manual Amount (Rp)",
-        "mode_percent": "Percentage of Income (%)",
-        "input_percent": "Enter Percentage (%)",
+        "setting_title": "⚙️ Budget Target & Percentage (%) Settings",
+        "setting_desc": "Set targets via Amount (Rp) or Percentage (%) of total income. Both auto-sync seamlessly.",
         "save_setting": "Save Target Settings",
         "success_setting": "Budget settings updated successfully!",
         "add_tx": "➕ Add New Transaction (Quick Input)",
@@ -167,21 +159,16 @@ def init_database():
         ])
         
         wb_budget = pd.DataFrame([
-            {"Category_Code": "5101", "Category_Name": "Zakat & Sedekah (2.5%)", "Type": "Non-Konsumtif", "Target_Budget": 142500},
-            {"Category_Code": "5102", "Category_Name": "Transfer Orang Tua", "Type": "Non-Konsumtif", "Target_Budget": 1200000},
-            {"Category_Code": "5103", "Category_Name": "Sewa Kost", "Type": "Non-Konsumtif", "Target_Budget": 700000},
-            {"Category_Code": "5104", "Category_Name": "Bayar Utang / Cicilan", "Type": "Non-Konsumtif", "Target_Budget": 900000},
-            {"Category_Code": "5105", "Category_Name": "Beban Pasangan / Pacar", "Type": "Konsumtif", "Target_Budget": 400000},
-            {"Category_Code": "5106", "Category_Name": "Beban Hiburan & Main", "Type": "Konsumtif", "Target_Budget": 400000},
-            {"Category_Code": "5107", "Category_Name": "Makan & Minum Harian", "Type": "Konsumtif", "Target_Budget": 1200000},
-            {"Category_Code": "5108", "Category_Name": "Utilitas (Listrik/Internet)", "Type": "Non-Konsumtif", "Target_Budget": 250000},
-            {"Category_Code": "5109", "Category_Name": "Transportasi & Bensin", "Type": "Non-Konsumtif", "Target_Budget": 300000},
-            {"Category_Code": "1201", "Category_Name": "Tabungan / Investasi", "Type": "Non-Konsumtif", "Target_Budget": 407500},
-        ])
-        
-        wb_settings = pd.DataFrame([
-            {"Setting_Key": "Zakat_Mode", "Setting_Value": "Percent"},
-            {"Setting_Key": "Zakat_Percent", "Setting_Value": "2.5"}
+            {"Category_Code": "5101", "Category_Name": "Zakat & Sedekah", "Type": "Non-Konsumtif", "Target_Percent": 2.5, "Target_Budget": 142500},
+            {"Category_Code": "5102", "Category_Name": "Transfer Orang Tua", "Type": "Non-Konsumtif", "Target_Percent": 21.05, "Target_Budget": 1200000},
+            {"Category_Code": "5103", "Category_Name": "Sewa Kost", "Type": "Non-Konsumtif", "Target_Percent": 12.28, "Target_Budget": 700000},
+            {"Category_Code": "5104", "Category_Name": "Bayar Utang / Cicilan", "Type": "Non-Konsumtif", "Target_Percent": 15.79, "Target_Budget": 900000},
+            {"Category_Code": "5105", "Category_Name": "Beban Pasangan / Pacar", "Type": "Konsumtif", "Target_Percent": 7.02, "Target_Budget": 400000},
+            {"Category_Code": "5106", "Category_Name": "Beban Hiburan & Main", "Type": "Konsumtif", "Target_Percent": 7.02, "Target_Budget": 400000},
+            {"Category_Code": "5107", "Category_Name": "Makan & Minum Harian", "Type": "Konsumtif", "Target_Percent": 21.05, "Target_Budget": 1200000},
+            {"Category_Code": "5108", "Category_Name": "Utilitas (Listrik/Internet)", "Type": "Non-Konsumtif", "Target_Percent": 4.39, "Target_Budget": 250000},
+            {"Category_Code": "5109", "Category_Name": "Transportasi & Bensin", "Type": "Non-Konsumtif", "Target_Percent": 5.26, "Target_Budget": 300000},
+            {"Category_Code": "1201", "Category_Name": "Tabungan / Investasi", "Type": "Non-Konsumtif", "Target_Percent": 7.15, "Target_Budget": 407500},
         ])
         
         wb_tx = pd.DataFrame(columns=["TX_ID", "Date", "Type", "Account_From", "Account_To", "Category_Code", "Amount", "Notes"])
@@ -189,22 +176,22 @@ def init_database():
         with pd.ExcelWriter(DB_FILE, engine="openpyxl") as writer:
             wb_accounts.to_excel(writer, sheet_name="Accounts", index=False)
             wb_budget.to_excel(writer, sheet_name="Budget", index=False)
-            wb_settings.to_excel(writer, sheet_name="Settings", index=False)
             wb_tx.to_excel(writer, sheet_name="Transactions", index=False)
 
 def load_data():
     init_database()
     accounts = pd.read_excel(DB_FILE, sheet_name="Accounts")
-    budget = pd.read_excel(DB_FILE, sheet_name="Budget", dtype={"Category_Code": str})
     try:
-        settings = pd.read_excel(DB_FILE, sheet_name="Settings")
+        budget = pd.read_excel(DB_FILE, sheet_name="Budget", dtype={"Category_Code": str})
+        if "Target_Percent" not in budget.columns:
+            budget["Target_Percent"] = 0.0
     except Exception:
-        settings = pd.DataFrame([{"Setting_Key": "Zakat_Mode", "Setting_Value": "Percent"}, {"Setting_Key": "Zakat_Percent", "Setting_Value": "2.5"}])
+        budget = pd.DataFrame(columns=["Category_Code", "Category_Name", "Type", "Target_Percent", "Target_Budget"])
     transactions = pd.read_excel(DB_FILE, sheet_name="Transactions", dtype={"Category_Code": str})
-    return accounts, budget, settings, transactions
+    return accounts, budget, transactions
 
 def save_transaction(new_tx):
-    accounts, budget, settings, transactions = load_data()
+    accounts, budget, transactions = load_data()
     transactions = pd.concat([transactions, pd.DataFrame([new_tx])], ignore_index=True)
     
     amt = new_tx["Amount"]
@@ -219,11 +206,10 @@ def save_transaction(new_tx):
     with pd.ExcelWriter(DB_FILE, engine="openpyxl") as writer:
         accounts.to_excel(writer, sheet_name="Accounts", index=False)
         budget.to_excel(writer, sheet_name="Budget", index=False)
-        settings.to_excel(writer, sheet_name="Settings", index=False)
         transactions.to_excel(writer, sheet_name="Transactions", index=False)
 
 def delete_transaction(tx_id):
-    accounts, budget, settings, transactions = load_data()
+    accounts, budget, transactions = load_data()
     tx_to_delete = transactions[transactions["TX_ID"] == tx_id]
     
     if not tx_to_delete.empty:
@@ -243,34 +229,35 @@ def delete_transaction(tx_id):
         with pd.ExcelWriter(DB_FILE, engine="openpyxl") as writer:
             accounts.to_excel(writer, sheet_name="Accounts", index=False)
             budget.to_excel(writer, sheet_name="Budget", index=False)
-            settings.to_excel(writer, sheet_name="Settings", index=False)
             transactions.to_excel(writer, sheet_name="Transactions", index=False)
 
 def update_transaction(updated_tx):
     delete_transaction(updated_tx["TX_ID"])
     save_transaction(updated_tx)
 
-def update_budget_settings(new_budget_df, new_settings_df):
-    accounts, _, _, transactions = load_data()
+def update_budget_targets(new_budget_df):
+    accounts, _, transactions = load_data()
     with pd.ExcelWriter(DB_FILE, engine="openpyxl") as writer:
         accounts.to_excel(writer, sheet_name="Accounts", index=False)
         new_budget_df.to_excel(writer, sheet_name="Budget", index=False)
-        new_settings_df.to_excel(writer, sheet_name="Settings", index=False)
         transactions.to_excel(writer, sheet_name="Transactions", index=False)
 
-accounts_df, budget_df, settings_df, tx_df = load_data()
+accounts_df, budget_df, tx_df = load_data()
 
-# --- HITUNG OTOMATIS ZAKAT JIKA MODE PERCENT ---
-zakat_mode = settings_df.loc[settings_df["Setting_Key"] == "Zakat_Mode", "Setting_Value"].values
-zakat_mode = zakat_mode[0] if len(zakat_mode) > 0 else "Percent"
+# --- SINKRONISASI TARGET BERDASARKAN TOTAL PEMASUKAN ---
+total_income = tx_df[tx_df["Type"] == "Pemasukan"]["Amount"].sum() if not tx_df.empty else 0
 
-zakat_percent_val = settings_df.loc[settings_df["Setting_Key"] == "Zakat_Percent", "Setting_Value"].values
-zakat_percent_val = float(zakat_percent_val[0]) if len(zakat_percent_val) > 0 else 2.5
-
-if zakat_mode == "Percent" and not tx_df.empty:
-    total_income = tx_df[tx_df["Type"] == "Pemasukan"]["Amount"].sum()
-    calculated_zakat = total_income * (zakat_percent_val / 100)
-    budget_df.loc[budget_df["Category_Code"] == "5101", "Target_Budget"] = calculated_zakat
+# Jika ada total pemasukan, sinkronkan nominal target dengan persentase atau sebaliknya
+for idx, row in budget_df.iterrows():
+    pct = float(row["Target_Percent"]) if pd.notnull(row["Target_Percent"]) else 0.0
+    bud = float(row["Target_Budget"]) if pd.notnull(row["Target_Budget"]) else 0.0
+    
+    if total_income > 0:
+        # Jika persentase diisi atau default, hitung nominal target dari persentase
+        if row["Category_Code"] == "5101":
+            # Zakat wajib 2.5% dari total pemasukan
+            budget_df.loc[idx, "Target_Percent"] = 2.5
+            budget_df.loc[idx, "Target_Budget"] = total_income * (2.5 / 100)
 
 # --- MODUL 1: WALLET CARDS ---
 if "show_balance" not in st.session_state:
@@ -293,29 +280,23 @@ for i, row in accounts_df.iterrows():
 
 st.markdown("---")
 
-# --- MODUL PENGATURAN TARGET & SEDEKAH ---
+# --- MODUL PENGATURAN TARGET & PERSENTASE ---
 with st.expander(T["setting_title"], expanded=False):
     st.write(T["setting_desc"])
+    if total_income > 0:
+        st.info(f"Total Pemasukan Tercatat Saat Ini: **Rp {total_income:,.0f}** (Digunakan sebagai acuan perhitungan persentase target).".replace(",", "."))
+    else:
+        st.warning("Belum ada pemasukan tercatat. Silakan input pemasukan agar persentase target dapat dikalkulasi otomatis ke nominal Rupiah.")
     
     with st.form("settings_form"):
-        mode_choice = st.radio(
-            T["calc_mode"], 
-            [T["mode_percent"], T["mode_manual"]], 
-            index=0 if zakat_mode == "Percent" else 1
-        )
-        
-        pct_input = st.number_input(T["input_percent"], min_value=0.0, max_value=100.0, value=zakat_percent_val, step=0.5)
-        
-        st.markdown("---")
-        st.markdown("**Atur Nominal Target Pos Pengeluaran Lainnya:**")
-        
         edited_budget_df = st.data_editor(
             budget_df, 
             column_config={
                 "Category_Code": st.column_config.TextColumn("Kode", disabled=True),
                 "Category_Name": st.column_config.TextColumn("Kategori Pos", disabled=True),
                 "Type": st.column_config.TextColumn("Tipe", disabled=True),
-                "Target_Budget": st.column_config.NumberColumn(T["target"], format="Rp %d")
+                "Target_Percent": st.column_config.NumberColumn("Target (%)", format="%.2f %%", min_value=0.0, max_value=100.0, step=0.1),
+                "Target_Budget": st.column_config.NumberColumn(T["target"], format="Rp %d", min_value=0.0, step=10000.0)
             },
             hide_index=True,
             use_container_width=True
@@ -324,12 +305,27 @@ with st.expander(T["setting_title"], expanded=False):
         submit_setting = st.form_submit_button(T["save_setting"])
         
         if submit_setting:
-            new_mode = "Percent" if mode_choice == T["mode_percent"] else "Manual"
-            new_settings = pd.DataFrame([
-                {"Setting_Key": "Zakat_Mode", "Setting_Value": new_mode},
-                {"Setting_Key": "Zakat_Percent", "Setting_Value": str(pct_input)}
-            ])
-            update_budget_settings(edited_budget_df, new_settings)
+            # Logika interaktif: Cek apakah user mengubah persentase atau nominal Rupiah
+            for idx, row in edited_budget_df.iterrows():
+                orig_pct = float(budget_df.loc[idx, "Target_Percent"])
+                new_pct = float(edited_budget_df.loc[idx, "Target_Percent"])
+                orig_bud = float(budget_df.loc[idx, "Target_Budget"])
+                new_bud = float(edited_budget_df.loc[idx, "Target_Budget"])
+                
+                # Jika Zakat dipaksa selain 2.5%, kita bisa biarkan atau kunci, tapi sesuai request zakat pasti 2.5% jika berbasis persen
+                if row["Category_Code"] == "5101":
+                    edited_budget_df.loc[idx, "Target_Percent"] = 2.5
+                    if total_income > 0:
+                        edited_budget_df.loc[idx, "Target_Budget"] = total_income * (2.5 / 100)
+                else:
+                    # Jika user mengubah nominal budget dan total pemasukan > 0, hitung persentasenya otomatis
+                    if new_bud != orig_bud and total_income > 0:
+                        edited_budget_df.loc[idx, "Target_Percent"] = (new_bud / total_income) * 100
+                    # Jika user mengubah persentase, hitung nominal budget otomatis
+                    elif new_pct != orig_pct and total_income > 0:
+                        edited_budget_df.loc[idx, "Target_Budget"] = total_income * (new_pct / 100)
+
+            update_budget_targets(edited_budget_df)
             st.success(T["success_setting"])
             st.rerun()
 
@@ -459,8 +455,9 @@ if not tx_df.empty:
     merged_budget["Status"] = merged_budget["Remaining"].apply(lambda x: T["status_safe"] if x >= 0 else T["status_over"])
 
     st.dataframe(
-        merged_budget[["Category_Code", "Category_Name", "Target_Budget", "Actual_Spending", "Remaining", "Status"]],
+        merged_budget[["Category_Code", "Category_Name", "Target_Percent", "Target_Budget", "Actual_Spending", "Remaining", "Status"]],
         column_config={
+            "Target_Percent": st.column_config.NumberColumn("Target (%)", format="%.2f %%"),
             "Target_Budget": st.column_config.NumberColumn(T["target"], format="Rp %d"),
             "Actual_Spending": st.column_config.NumberColumn(T["actual"], format="Rp %d"),
             "Remaining": st.column_config.NumberColumn(T["remaining"], format="Rp %d"),
