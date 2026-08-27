@@ -119,10 +119,31 @@ def delete_transaction(tx_id):
 accounts_df, budget_df, tx_df = load_data()
 
 # --- MODUL 1: WALLET CARDS ---
-st.markdown("### 💳 Saldo Rekening / Dompet Riil")
+# Inisialisasi status visibilitas saldo (default: terlihat)
+if "show_balance" not in st.session_state:
+    st.session_state.show_balance = True
+
+# Header & Tombol Hide/Show ala m-Banking
+c_title, c_toggle = st.columns([8, 2])
+with c_title:
+    st.markdown("### 💳 Saldo Rekening / Dompet Riil")
+
+with c_toggle:
+    # Tombol toggle sakelar
+    btn_label = "🙈 Sembunyikan Saldo" if st.session_state.show_balance else "👁️ Tampilkan Saldo"
+    if st.button(btn_label, use_container_width=True):
+        st.session_state.show_balance = not st.session_state.show_balance
+        st.rerun()
+
+# Menampilkan kartu saldo sesuai status visibilitas
 cols = st.columns(len(accounts_df))
 for i, row in accounts_df.iterrows():
-    cols[i].metric(row["Account_Name"], f"Rp {row['Current_Balance']:,.0f}".replace(",", "."))
+    if st.session_state.show_balance:
+        balance_display = f"Rp {row['Current_Balance']:,.0f}".replace(",", ".")
+    else:
+        balance_display = "Rp ••••••••"
+        
+    cols[i].metric(row["Account_Name"], balance_display)
 
 st.markdown("---")
 
