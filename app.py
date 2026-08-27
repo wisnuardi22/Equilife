@@ -6,11 +6,9 @@ from datetime import datetime
 from PIL import Image
 
 # --- CONFIG & HEADER ---
-# Menentukan lokasi root proyek secara tepat
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 logo_path = os.path.join(BASE_DIR, "image", "logo.png")
 
-# Memuat gambar
 try:
     logo_img = Image.open(logo_path)
 except Exception:
@@ -22,16 +20,119 @@ st.set_page_config(
     page_icon=logo_img
 )
 
+# --- SIDEBAR: LANGUAGE SELECTOR ---
+st.sidebar.header("⚙️ Settings / Pengaturan")
+lang_choice = st.sidebar.selectbox("🌐 Language / Bahasa", ["Bahasa Indonesia 🇮🇩", "English 🇬🇧"])
+
+# Kamus Penerjemah Teks UI
+T = {
+    "Bahasa Indonesia 🇮🇩": {
+        "title": "Equilife — Personal Financial Balance",
+        "caption": "Sistem Pengendalian Anggaran (Budget vs Actual), Multi-Rekening & Tingkat Konsumtif",
+        "wallets": "💳 Saldo Rekening / Dompet Riil",
+        "hide_bal": "🙈 Sembunyikan Saldo",
+        "show_bal": "👁️ Tampilkan Saldo",
+        "add_tx": "➕ **Tambah Transaksi Baru (Input Cepat)**",
+        "tx_type": "Jenis Transaksi",
+        "expense": "Pengeluaran",
+        "income": "Pemasukan",
+        "transfer": "Transfer Antar Rekening",
+        "date": "Tanggal",
+        "acc_from": "Sumber Rekening",
+        "acc_to": "Rekening Tujuan",
+        "from_acc": "Dari Rekening",
+        "to_acc": "Ke Rekening",
+        "category": "Kategori Pos Pengeluaran",
+        "not_needed": "- (Tidak Dibutuhkan)",
+        "amount": "Nominal (Rp)",
+        "notes": "Keterangan",
+        "save": "💾 Simpan Transaksi",
+        "success_save": "Transaksi berhasil disimpan!",
+        "correct_title": "🗑️ **Koreksi / Hapus Transaksi Salah**",
+        "correct_desc": "Pilih transaksi di bawah ini untuk menghapusnya (saldo akan otomatis dikembalikan):",
+        "select_tx_del": "Pilih Transaksi yang Akan Dihapus:",
+        "btn_del": "❌ Hapus Transaksi Ini",
+        "success_del": "berhasil dihapus dan saldo rekening dikembalikan!",
+        "dash_title": "📊 Dashboard Equilife & Analysis",
+        "filter_head": "⚙️ Filter Dashboard",
+        "filter_mode": "Tampilan Filter",
+        "monthly": "Bulanan",
+        "weekly": "Mingguan",
+        "week_num": "Pilih Minggu ke-",
+        "budget_vs_act": "**Monitoring Target Anggaran (Budget vs Actual)**",
+        "target": "Target (Rp)",
+        "actual": "Realisasi (Rp)",
+        "remaining": "Sisa (Rp)",
+        "status": "Status",
+        "safe": "🟢 Aman",
+        "over": "🔴 Overbudget",
+        "lifestyle_ratio": "**Indikator Tingkat Konsumtif**",
+        "life_metric": "Rasio Pengeluaran Lifestyle",
+        "wise": "🟢 Bijak",
+        "warning": "🟡 Waspada",
+        "high_cons": "🔴 Konsumtif Tinggi",
+        "pie_title": "Proporsi Pengeluaran",
+        "no_data": "Belum ada data transaksi. Silakan input transaksi pertama kamu di atas!"
+    },
+    "English 🇬🇧": {
+        "title": "Equilife — Personal Financial Balance",
+        "caption": "Your personal financial dashboard to track income, expenses, and savings.",
+        "wallets": "💳 Account Balances / Real Wallets",
+        "hide_bal": "🙈 Hide Balance",
+        "show_bal": "👁️ Show Balance",
+        "add_tx": "➕ **Add New Transaction (Quick Input)**",
+        "tx_type": "Transaction Type",
+        "expense": "Expense",
+        "income": "Income",
+        "transfer": "Transfer Between Accounts",
+        "date": "Date",
+        "acc_from": "Source Account",
+        "acc_to": "Destination Account",
+        "from_acc": "From Account",
+        "to_acc": "To Account",
+        "category": "Expense Category",
+        "not_needed": "- (Not Required)",
+        "amount": "Amount (Rp)",
+        "notes": "Notes",
+        "save": "💾 Save Transaction",
+        "success_save": "Transaction saved successfully!",
+        "correct_title": "🗑️ **Correction / Delete Wrong Transaction**",
+        "correct_desc": "Select a transaction below to delete it (account balances will be automatically restored):",
+        "select_tx_del": "Select Transaction to Delete:",
+        "btn_del": "❌ Delete This Transaction",
+        "success_del": "deleted successfully and balance restored!",
+        "dash_title": "📊 Dashboard Equilife & Analysis",
+        "filter_head": "⚙️ Dashboard Filters",
+        "filter_mode": "View Mode",
+        "monthly": "Monthly",
+        "weekly": "Weekly",
+        "week_num": "Select Week No.",
+        "budget_vs_act": "**Budget Target Monitoring (Budget vs Actual)**",
+        "target": "Target (Rp)",
+        "actual": "Actual (Rp)",
+        "remaining": "Remaining (Rp)",
+        "status": "Status",
+        "safe": "🟢 Safe",
+        "over": "🔴 Overbudget",
+        "lifestyle_ratio": "**Lifestyle Consumption Indicator**",
+        "life_metric": "Lifestyle Spending Ratio",
+        "wise": "🟢 Wise",
+        "warning": "🟡 Caution",
+        "high_cons": "🔴 High Consumption",
+        "pie_title": "Expense Ratio",
+        "no_data": "No transaction data available yet. Please add your first transaction above!"
+    }
+}[lang_choice]
+
 # --- DISPLAY LOGO & TITLE ---
 col_logo, col_title = st.columns([1, 12])
-
 with col_logo:
     if isinstance(logo_img, Image.Image):
         st.image(logo_img, width=65)
 
 with col_title:
-    st.title("Equilife — Personal Financial Balance")
-    st.caption("Your personal financial dashboard to track income, expenses, and savings.")
+    st.title(T["title"])
+    st.caption(T["caption"])
 
 DB_FILE = os.path.join(BASE_DIR, "database.xlsx")
 
@@ -78,11 +179,11 @@ def save_transaction(new_tx):
     transactions = pd.concat([transactions, pd.DataFrame([new_tx])], ignore_index=True)
     
     amt = new_tx["Amount"]
-    if new_tx["Type"] == "Pengeluaran":
+    if new_tx["Type"] in ["Pengeluaran", "Expense"]:
         accounts.loc[accounts["Account_Name"] == new_tx["Account_From"], "Current_Balance"] -= amt
-    elif new_tx["Type"] == "Pemasukan":
+    elif new_tx["Type"] in ["Pemasukan", "Income"]:
         accounts.loc[accounts["Account_Name"] == new_tx["Account_To"], "Current_Balance"] += amt
-    elif new_tx["Type"] == "Transfer Antar Rekening":
+    else:
         accounts.loc[accounts["Account_Name"] == new_tx["Account_From"], "Current_Balance"] -= amt
         accounts.loc[accounts["Account_Name"] == new_tx["Account_To"], "Current_Balance"] += amt
 
@@ -99,12 +200,11 @@ def delete_transaction(tx_id):
         row = tx_to_delete.iloc[0]
         amt = row["Amount"]
         
-        # Restore balances automatically
-        if row["Type"] == "Pengeluaran":
+        if row["Type"] in ["Pengeluaran", "Expense"]:
             accounts.loc[accounts["Account_Name"] == row["Account_From"], "Current_Balance"] += amt
-        elif row["Type"] == "Pemasukan":
+        elif row["Type"] in ["Pemasukan", "Income"]:
             accounts.loc[accounts["Account_Name"] == row["Account_To"], "Current_Balance"] -= amt
-        elif row["Type"] == "Transfer Antar Rekening":
+        else:
             accounts.loc[accounts["Account_Name"] == row["Account_From"], "Current_Balance"] += amt
             accounts.loc[accounts["Account_Name"] == row["Account_To"], "Current_Balance"] -= amt
 
@@ -119,23 +219,19 @@ def delete_transaction(tx_id):
 accounts_df, budget_df, tx_df = load_data()
 
 # --- MODUL 1: WALLET CARDS ---
-# Inisialisasi status visibilitas saldo (default: terlihat)
 if "show_balance" not in st.session_state:
     st.session_state.show_balance = True
 
-# Header & Tombol Hide/Show ala m-Banking
 c_title, c_toggle = st.columns([8, 2])
 with c_title:
-    st.markdown("### 💳 Saldo Rekening / Dompet Riil")
+    st.markdown(f"### {T['wallets']}")
 
 with c_toggle:
-    # Tombol toggle sakelar
-    btn_label = "🙈 Sembunyikan Saldo" if st.session_state.show_balance else "👁️ Tampilkan Saldo"
+    btn_label = T["hide_bal"] if st.session_state.show_balance else T["show_bal"]
     if st.button(btn_label, use_container_width=True):
         st.session_state.show_balance = not st.session_state.show_balance
         st.rerun()
 
-# Menampilkan kartu saldo sesuai status visibilitas
 cols = st.columns(len(accounts_df))
 for i, row in accounts_df.iterrows():
     if st.session_state.show_balance:
@@ -148,49 +244,46 @@ for i, row in accounts_df.iterrows():
 st.markdown("---")
 
 # --- MODUL 2: FORM INPUT TRANSAKSI ---
-with st.expander("➕ **Tambah Transaksi Baru (Input Cepat)**", expanded=True):
-    # 1. Pilih Jenis Transaksi di LUAR form agar UI langsung berubah secara interaktif
+with st.expander(T["add_tx"], expanded=True):
     c_type1, c_type2 = st.columns([1, 2])
-    tx_type = c_type1.selectbox("Jenis Transaksi", ["Pengeluaran", "Pemasukan", "Transfer Antar Rekening"])
+    tx_type_input = c_type1.selectbox(T["tx_type"], [T["expense"], T["income"], T["transfer"]])
 
-    # 2. Form Input Utama
     with st.form("add_tx_form", clear_on_submit=True):
         c1, c2 = st.columns(2)
-        tx_date = c1.date_input("Tanggal", datetime.now())
+        tx_date = c1.date_input(T["date"], datetime.now())
         
         acc_list = accounts_df["Account_Name"].tolist()
-        if tx_type == "Pengeluaran":
-            acc_from = c2.selectbox("Sumber Rekening", acc_list)
+        if tx_type_input == T["expense"]:
+            acc_from = c2.selectbox(T["acc_from"], acc_list)
             acc_to = "-"
-        elif tx_type == "Pemasukan":
+        elif tx_type_input == T["income"]:
             acc_from = "-"
-            acc_to = c2.selectbox("Rekening Tujuan", acc_list)
+            acc_to = c2.selectbox(T["acc_to"], acc_list)
         else:
-            acc_from = c2.selectbox("Dari Rekening", acc_list, index=0)
-            acc_to = c2.selectbox("Ke Rekening", acc_list, index=1)
+            acc_from = c2.selectbox(T["from_acc"], acc_list, index=0)
+            acc_to = c2.selectbox(T["to_acc"], acc_list, index=1)
             
         c4, c5, c6 = st.columns([3, 2, 4])
         
-        # Dropdown Kategori HANYA tampil jika jenis transaksi adalah Pengeluaran
-        if tx_type == "Pengeluaran":
+        if tx_type_input == T["expense"]:
             cat_options = budget_df["Category_Code"].astype(str) + " - " + budget_df["Category_Name"]
-            cat_selected = c4.selectbox("Kategori Pos Pengeluaran", cat_options)
+            cat_selected = c4.selectbox(T["category"], cat_options)
             cat_code = cat_selected.split(" - ")[0]
         else:
-            c4.text_input("Kategori Pos Pengeluaran", value="- (Tidak Dibutuhkan)", disabled=True)
+            c4.text_input(T["category"], value=T["not_needed"], disabled=True)
             cat_code = "-"
         
-        amount = c5.number_input("Nominal (Rp)", min_value=0, value=50000, step=5000)
-        notes = c6.text_input("Keterangan", "")
+        amount = c5.number_input(T["amount"], min_value=0, value=50000, step=5000)
+        notes = c6.text_input(T["notes"], "")
         
-        submit = st.form_submit_button("💾 Simpan Transaksi")
+        submit = st.form_submit_button(T["save"])
         
         if submit:
             tx_id = f"TX-{len(tx_df)+1:04d}"
             new_record = {
                 "TX_ID": tx_id,
                 "Date": tx_date.strftime("%Y-%m-%d"),
-                "Type": tx_type,
+                "Type": "Pengeluaran" if tx_type_input == T["expense"] else ("Pemasukan" if tx_type_input == T["income"] else "Transfer Antar Rekening"),
                 "Account_From": acc_from,
                 "Account_To": acc_to,
                 "Category_Code": str(cat_code),
@@ -198,34 +291,34 @@ with st.expander("➕ **Tambah Transaksi Baru (Input Cepat)**", expanded=True):
                 "Notes": notes
             }
             save_transaction(new_record)
-            st.success("Transaksi berhasil disimpan!")
+            st.success(T["success_save"])
             st.rerun()
 
-# --- MODUL 3: RIWAYAT & CORRECTION (HAPUS TRANSAKSI SALAH) ---
+# --- MODUL 3: RIWAYAT & CORRECTION ---
 if not tx_df.empty:
-    with st.expander("🗑️ **Koreksi / Hapus Transaksi Salah**"):
-        st.write("Jika ada transaksi yang salah diinput, pilih transaksi di bawah ini untuk menghapusnya (saldo akan otomatis dikembalikan):")
+    with st.expander(T["correct_title"]):
+        st.write(T["correct_desc"])
         tx_options = tx_df.apply(lambda r: f"{r['TX_ID']} | {r['Date']} | {r['Type']} | Rp {r['Amount']:,.0f} | {r['Notes']}", axis=1)
-        selected_tx = st.selectbox("Pilih Transaksi yang Akan Dihapus:", tx_options)
+        selected_tx = st.selectbox(T["select_tx_del"], tx_options)
         
-        if st.button("❌ Hapus Transaksi Ini"):
+        if st.button(T["btn_del"]):
             selected_tx_id = selected_tx.split(" | ")[0]
             delete_transaction(selected_tx_id)
-            st.success(f"Transaksi {selected_tx_id} berhasil dihapus dan saldo rekening dikembalikan!")
+            st.success(f"{selected_tx_id} {T['success_del']}")
             st.rerun()
 
-# --- MODUL 4: FILTER & DASHBOARD KONSUMTIF ---
-st.markdown("### 📊 Dashboard Equilife & Analysis")
+# --- MODUL 4: FILTER & DASHBOARD ---
+st.markdown(f"### {T['dash_title']}")
 
-st.sidebar.header("⚙️ Filter Dashboard")
-view_mode = st.sidebar.radio("Tampilan Filter", ["Bulanan", "Mingguan"])
+st.sidebar.header(T["filter_head"])
+view_mode = st.sidebar.radio(T["filter_mode"], [T["monthly"], T["weekly"]])
 
 if not tx_df.empty:
     tx_df["Date"] = pd.to_datetime(tx_df["Date"])
     tx_df["Week"] = tx_df["Date"].dt.isocalendar().week
     
-    if view_mode == "Mingguan":
-        selected_week = st.sidebar.selectbox("Pilih Minggu ke-", sorted(tx_df["Week"].unique()))
+    if view_mode == T["weekly"]:
+        selected_week = st.sidebar.selectbox(T["week_num"], sorted(tx_df["Week"].unique()))
         filtered_tx = tx_df[(tx_df["Week"] == selected_week) & (tx_df["Type"] == "Pengeluaran")]
     else:
         filtered_tx = tx_df[tx_df["Type"] == "Pengeluaran"]
@@ -235,7 +328,7 @@ if not tx_df.empty:
     merged_budget = pd.merge(merged_budget, actual_spending, on="Category_Code", how="left").fillna(0)
     merged_budget.rename(columns={"Amount": "Actual_Spending"}, inplace=True)
     merged_budget["Remaining"] = merged_budget["Target_Budget"] - merged_budget["Actual_Spending"]
-    merged_budget["Status"] = merged_budget["Remaining"].apply(lambda x: "🟢 Aman" if x >= 0 else "🔴 Overbudget")
+    merged_budget["Status"] = merged_budget["Remaining"].apply(lambda x: T["safe"] if x >= 0 else T["over"])
 
     total_spent = merged_budget["Actual_Spending"].sum()
     konsumtif_spent = merged_budget[merged_budget["Type"] == "Konsumtif"]["Actual_Spending"].sum()
@@ -244,26 +337,27 @@ if not tx_df.empty:
     col_left, col_right = st.columns([6, 4])
     
     with col_left:
-        st.write("**Monitoring Target Anggaran (Budget vs Actual)**")
+        st.write(T["budget_vs_act"])
         st.dataframe(
             merged_budget[["Category_Code", "Category_Name", "Target_Budget", "Actual_Spending", "Remaining", "Status"]],
             column_config={
-                "Target_Budget": st.column_config.NumberColumn("Target (Rp)", format="Rp %d"),
-                "Actual_Spending": st.column_config.NumberColumn("Realisasi (Rp)", format="Rp %d"),
-                "Remaining": st.column_config.NumberColumn("Sisa (Rp)", format="Rp %d"),
+                "Target_Budget": st.column_config.NumberColumn(T["target"], format="Rp %d"),
+                "Actual_Spending": st.column_config.NumberColumn(T["actual"], format="Rp %d"),
+                "Remaining": st.column_config.NumberColumn(T["remaining"], format="Rp %d"),
+                "Status": st.column_config.TextColumn(T["status"]),
             },
             hide_index=True,
             use_container_width=True
         )
 
     with col_right:
-        st.write("**Indikator Tingkat Konsumtif**")
-        status_color = "🟢 Bijak" if ratio_konsumtif < 20 else ("🟡 Waspada" if ratio_konsumtif <= 35 else "🔴 Konsumtif Tinggi")
-        st.metric("Rasio Pengeluaran Lifestyle", f"{ratio_konsumtif:.1f}%", f"Status: {status_color}")
+        st.write(T["lifestyle_ratio"])
+        status_color = T["wise"] if ratio_konsumtif < 20 else (T["warning"] if ratio_konsumtif <= 35 else T["high_cons"])
+        st.metric(T["life_metric"], f"{ratio_konsumtif:.1f}%", f"Status: {status_color}")
         
         chart_data = merged_budget.groupby("Type")["Actual_Spending"].sum().reset_index()
-        fig = px.pie(chart_data, values="Actual_Spending", names="Type", title="Proporsi Pengeluaran", color="Type",
+        fig = px.pie(chart_data, values="Actual_Spending", names="Type", title=T["pie_title"], color="Type",
                      color_discrete_map={"Konsumtif": "#FF4B4B", "Non-Konsumtif": "#00C853"})
         st.plotly_chart(fig, use_container_width=True)
 else:
-    st.info("Belum ada data transaksi. Silakan input transaksi pertama kamu di atas!")
+    st.info(T["no_data"])
