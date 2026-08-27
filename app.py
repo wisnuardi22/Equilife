@@ -5,7 +5,7 @@ import os
 from datetime import datetime
 from PIL import Image
 
-# --- CONFIG & HEADER ---
+# --- CONFIG ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 logo_path = os.path.join(BASE_DIR, "image", "logo.png")
 
@@ -20,9 +20,15 @@ st.set_page_config(
     page_icon=logo_img
 )
 
-# --- SIDEBAR: LANGUAGE SELECTOR ---
-st.sidebar.header("⚙️ Settings / Pengaturan")
-lang_choice = st.sidebar.selectbox("🌐 Language / Bahasa", ["Bahasa Indonesia 🇮🇩", "English 🇬🇧"])
+# --- HEADER & LANGUAGE SELECTOR (TOP RIGHT) ---
+col_logo, col_title, col_lang = st.columns([1, 8, 3])
+
+with col_logo:
+    if isinstance(logo_img, Image.Image):
+        st.image(logo_img, width=65)
+
+with col_lang:
+    lang_choice = st.selectbox("🌐 Language / Bahasa", ["Bahasa Indonesia 🇮🇩", "English 🇬🇧"], label_visibility="collapsed")
 
 # Kamus Penerjemah Teks UI
 T = {
@@ -53,19 +59,18 @@ T = {
         "select_tx_del": "Pilih Transaksi yang Akan Dihapus:",
         "btn_del": "❌ Hapus Transaksi Ini",
         "success_del": "berhasil dihapus dan saldo rekening dikembalikan!",
-        "dash_title": "📊 Dashboard Equilife & Analysis",
-        "filter_head": "⚙️ Filter Dashboard",
-        "filter_mode": "Tampilan Filter",
-        "monthly": "Bulanan",
-        "weekly": "Mingguan",
-        "week_num": "Pilih Minggu ke-",
-        "budget_vs_act": "**Monitoring Target Anggaran (Budget vs Actual)**",
+        "budget_vs_act": "📋 Monitoring Target Anggaran (Budget vs Actual)",
         "target": "Target (Rp)",
         "actual": "Realisasi (Rp)",
         "remaining": "Sisa (Rp)",
         "status": "Status",
         "safe": "🟢 Aman",
         "over": "🔴 Overbudget",
+        "dash_title": "📊 Dashboard Interaktif & Analisis Konsumtif",
+        "filter_mode": "Tampilkan Berdasarkan Filter:",
+        "monthly": "Bulanan",
+        "weekly": "Mingguan",
+        "week_num": "Pilih Minggu ke-",
         "lifestyle_ratio": "**Indikator Tingkat Konsumtif**",
         "life_metric": "Rasio Pengeluaran Lifestyle",
         "wise": "🟢 Bijak",
@@ -101,19 +106,18 @@ T = {
         "select_tx_del": "Select Transaction to Delete:",
         "btn_del": "❌ Delete This Transaction",
         "success_del": "deleted successfully and balance restored!",
-        "dash_title": "📊 Dashboard Equilife & Analysis",
-        "filter_head": "⚙️ Dashboard Filters",
-        "filter_mode": "View Mode",
-        "monthly": "Monthly",
-        "weekly": "Weekly",
-        "week_num": "Select Week No.",
-        "budget_vs_act": "**Budget Target Monitoring (Budget vs Actual)**",
+        "budget_vs_act": "📋 Budget Target Monitoring (Budget vs Actual)",
         "target": "Target (Rp)",
         "actual": "Actual (Rp)",
         "remaining": "Remaining (Rp)",
         "status": "Status",
         "safe": "🟢 Safe",
         "over": "🔴 Overbudget",
+        "dash_title": "📊 Interactive Dashboard & Consumption Analysis",
+        "filter_mode": "Display Filtered By:",
+        "monthly": "Monthly",
+        "weekly": "Weekly",
+        "week_num": "Select Week No.",
         "lifestyle_ratio": "**Lifestyle Consumption Indicator**",
         "life_metric": "Lifestyle Spending Ratio",
         "wise": "🟢 Wise",
@@ -124,19 +128,13 @@ T = {
     }
 }[lang_choice]
 
-# --- DISPLAY LOGO & TITLE ---
-col_logo, col_title = st.columns([1, 12])
-with col_logo:
-    if isinstance(logo_img, Image.Image):
-        st.image(logo_img, width=65)
-
 with col_title:
     st.title(T["title"])
     st.caption(T["caption"])
 
 DB_FILE = os.path.join(BASE_DIR, "database.xlsx")
 
-# --- HELPER FUNCTIONS FOR EXCEL DATABASE ---
+# --- DATABASE HELPER FUNCTIONS ---
 def init_database():
     if not os.path.exists(DB_FILE):
         wb_accounts = pd.DataFrame([
@@ -215,7 +213,6 @@ def delete_transaction(tx_id):
             budget.to_excel(writer, sheet_name="Budget", index=False)
             transactions.to_excel(writer, sheet_name="Transactions", index=False)
 
-# --- LOAD DATA ---
 accounts_df, budget_df, tx_df = load_data()
 
 # --- MODUL 1: WALLET CARDS ---
@@ -294,7 +291,7 @@ with st.expander(T["add_tx"], expanded=True):
             st.success(T["success_save"])
             st.rerun()
 
-# --- MODUL 3: RIWAYAT & CORRECTION ---
+# --- MODUL 3: KOREKSI / HAPUS TRANSAKSI ---
 if not tx_df.empty:
     with st.expander(T["correct_title"]):
         st.write(T["correct_desc"])
@@ -307,21 +304,15 @@ if not tx_df.empty:
             st.success(f"{selected_tx_id} {T['success_del']}")
             st.rerun()
 
-# --- MODUL 4: FILTER & DASHBOARD ---
-st.markdown(f"### {T['dash_title']}")
+st.markdown("---")
 
-st.sidebar.header(T["filter_head"])
-view_mode = st.sidebar.radio(T["filter_mode"], [T["monthly"], T["weekly"]])
+# --- MODUL 4: TABEL MONITORING ANGGARAN (BUDGET VS ACTUAL) ---
+st.markdown(f"### {T['budget_vs_act']}")
 
 if not tx_df.empty:
     tx_df["Date"] = pd.to_datetime(tx_df["Date"])
     tx_df["Week"] = tx_df["Date"].dt.isocalendar().week
-    
-    if view_mode == T["weekly"]:
-        selected_week = st.sidebar.selectbox(T["week_num"], sorted(tx_df["Week"].unique()))
-        filtered_tx = tx_df[(tx_df["Week"] == selected_week) & (tx_df["Type"] == "Pengeluaran")]
-    else:
-        filtered_tx = tx_df[tx_df["Type"] == "Pengeluaran"]
+    filtered_tx = tx_df[tx_df["Type"] == "Pengeluaran"]
         
     merged_budget = budget_df.copy()
     actual_spending = filtered_tx.groupby("Category_Code")["Amount"].sum().reset_index()
@@ -330,34 +321,56 @@ if not tx_df.empty:
     merged_budget["Remaining"] = merged_budget["Target_Budget"] - merged_budget["Actual_Spending"]
     merged_budget["Status"] = merged_budget["Remaining"].apply(lambda x: T["safe"] if x >= 0 else T["over"])
 
-    total_spent = merged_budget["Actual_Spending"].sum()
-    konsumtif_spent = merged_budget[merged_budget["Type"] == "Konsumtif"]["Actual_Spending"].sum()
+    st.dataframe(
+        merged_budget[["Category_Code", "Category_Name", "Target_Budget", "Actual_Spending", "Remaining", "Status"]],
+        column_config={
+            "Target_Budget": st.column_config.NumberColumn(T["target"], format="Rp %d"),
+            "Actual_Spending": st.column_config.NumberColumn(T["actual"], format="Rp %d"),
+            "Remaining": st.column_config.NumberColumn(T["remaining"], format="Rp %d"),
+            "Status": st.column_config.TextColumn(T["status"]),
+        },
+        hide_index=True,
+        use_container_width=True
+    )
+else:
+    st.info(T["no_data"])
+
+st.markdown("---")
+
+# --- MODUL 5: DASHBOARD INTERAKTIF & ANALISIS KONSUMTIF ---
+st.markdown(f"### {T['dash_title']}")
+
+if not tx_df.empty:
+    # Filter Controls inside Main Dashboard Area
+    f_col1, f_col2 = st.columns([3, 3])
+    with f_col1:
+        view_mode = st.radio(T["filter_mode"], [T["monthly"], T["weekly"]], horizontal=True)
+    
+    if view_mode == T["weekly"]:
+        with f_col2:
+            selected_week = st.selectbox(T["week_num"], sorted(tx_df["Week"].unique()))
+            dash_tx = tx_df[(tx_df["Week"] == selected_week) & (tx_df["Type"] == "Pengeluaran")]
+    else:
+        dash_tx = tx_df[tx_df["Type"] == "Pengeluaran"]
+
+    dash_budget = budget_df.copy()
+    dash_spending = dash_tx.groupby("Category_Code")["Amount"].sum().reset_index()
+    dash_budget = pd.merge(dash_budget, dash_spending, on="Category_Code", how="left").fillna(0)
+    dash_budget.rename(columns={"Amount": "Actual_Spending"}, inplace=True)
+
+    total_spent = dash_budget["Actual_Spending"].sum()
+    konsumtif_spent = dash_budget[dash_budget["Type"] == "Konsumtif"]["Actual_Spending"].sum()
     ratio_konsumtif = (konsumtif_spent / 5700000) * 100 if 5700000 > 0 else 0
 
-    col_left, col_right = st.columns([6, 4])
+    c_met, c_chart = st.columns([4, 6])
     
-    with col_left:
-        st.write(T["budget_vs_act"])
-        st.dataframe(
-            merged_budget[["Category_Code", "Category_Name", "Target_Budget", "Actual_Spending", "Remaining", "Status"]],
-            column_config={
-                "Target_Budget": st.column_config.NumberColumn(T["target"], format="Rp %d"),
-                "Actual_Spending": st.column_config.NumberColumn(T["actual"], format="Rp %d"),
-                "Remaining": st.column_config.NumberColumn(T["remaining"], format="Rp %d"),
-                "Status": st.column_config.TextColumn(T["status"]),
-            },
-            hide_index=True,
-            use_container_width=True
-        )
-
-    with col_right:
+    with c_met:
         st.write(T["lifestyle_ratio"])
         status_color = T["wise"] if ratio_konsumtif < 20 else (T["warning"] if ratio_konsumtif <= 35 else T["high_cons"])
         st.metric(T["life_metric"], f"{ratio_konsumtif:.1f}%", f"Status: {status_color}")
         
-        chart_data = merged_budget.groupby("Type")["Actual_Spending"].sum().reset_index()
+    with c_chart:
+        chart_data = dash_budget.groupby("Type")["Actual_Spending"].sum().reset_index()
         fig = px.pie(chart_data, values="Actual_Spending", names="Type", title=T["pie_title"], color="Type",
                      color_discrete_map={"Konsumtif": "#FF4B4B", "Non-Konsumtif": "#00C853"})
         st.plotly_chart(fig, use_container_width=True)
-else:
-    st.info(T["no_data"])
