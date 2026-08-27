@@ -43,7 +43,7 @@ T = {
         "save_account": "Simpan Rekening Baru",
         "success_acc": "Rekening baru berhasil ditambahkan!",
         "setting_title": "⚙️ Pengaturan Target Anggaran & Live Calculation (%)",
-        "setting_desc": "Ubah Persentase (%) atau Nominal (Rp) secara bebas. Angka di sebelah akan otomatis menyesuaikan seketika.",
+        "setting_desc": "Ubah Persentase (%) atau Nominal (Rp) secara bebas. Kolom sebelah akan langsung menghitung otomatis.",
         "save_setting": "Simpan Perubahan Target",
         "success_setting": "Pengaturan target anggaran berhasil disimpan!",
         "add_tx": "➕ Tambah Transaksi Baru (Input Cepat)",
@@ -368,15 +368,10 @@ with st.expander(T["setting_title"], expanded=True):
     else:
         st.warning("Belum ada pemasukan tercatat. Silakan masukkan gaji/pemasukan terlebih dahulu pada menu input transaksi di atas.")
 
-    # Inisialisasi session state untuk menampung nilai interaktif target
-    if "live_budget" not in st.session_state:
+    # Inisialisasi session state untuk live update
+    if "live_budget" not in st.session_state or len(st.session_state.live_budget) != len(budget_df):
         st.session_state.live_budget = budget_df.copy()
-    else:
-        # Sinkronkan jika ada perubahan data dasar
-        if len(st.session_state.live_budget) != len(budget_df):
-            st.session_state.live_budget = budget_df.copy()
 
-    # Header Tabel Interaktif
     h1, h2, h3, h4 = st.columns([1, 3, 2, 2])
     h1.markdown("**Kode**")
     h2.markdown("**Kategori Pos**")
@@ -393,60 +388,56 @@ with st.expander(T["setting_title"], expanded=True):
         c1.text(row["Category_Code"])
         c2.text(row["Category_Name"])
         
-        current_rp = float(row["Target_Budget"])
-        current_pct = float(row["Target_Percent"])
+        cur_rp = float(row["Target_Budget"])
+        cur_pct = float(row["Target_Percent"])
         
-        # Zakat wajib 2.5% terkunci atau otomatis
         if row["Category_Code"] == "5101":
-            current_pct = 2.5
+            cur_pct = 2.5
             if total_income > 0:
-                current_rp = total_income * 0.025
-            val_rp = c3.number_input(f"rp_{idx}", value=float(current_rp), format="%.0f", disabled=True, label_visibility="collapsed")
-            val_pct = c4.number_input(f"pct_{idx}", value=float(current_pct), format="%.2f", disabled=True, label_visibility="collapsed")
+                cur_rp = total_income * 0.025
+            val_rp = c3.number_input(f"rp_{idx}", value=cur_rp, format="%.0f", disabled=True, label_visibility="collapsed")
+            val_pct = c4.number_input(f"pct_{idx}", value=cur_pct, format="%.2f", disabled=True, label_visibility="collapsed")
         else:
-            # Input interaktif Nominal Rupiah dan Persentase
-            val_rp = c3.number_input(f"rp_{idx}", value=float(current_rp), step=10000.0, format="%.0f", label_visibility="collapsed")
-            val_pct = c4.number_input(f"pct_{idx}", value=float(current_pct), step=0.1, format="%.2f", label_visibility="collapsed")
+            # Gunakan key unik agar Streamlit merespons setiap perubahan ketikan secara instan (rerun otomatis)
+            val_rp = c3.number_input(f"rp_{idx}", value=cur_rp, step=10000.0, format="%.0f", label_visibility="collapsed", key=f"input_rp_{idx}")
+            val_pct = c4.number_input(f"pct_{idx}", value=cur_pct, step=0.1, format="%.2f", label_visibility="collapsed", key=f"input_pct_{idx}")
             
-            # Logika Live Calculation: Cek mana yang berubah secara real-time
             if total_income > 0:
-                # Jika user mengubah nominal rupiah
-                if val_rp != current_rp:
-                    current_rp = val_rp
-                    current_pct = (val_rp / total_income) * 100.0
-                # Jika user mengubah persentase
-                elif val_pct != current_pct:
-                    current_pct = val_pct
-                    current_rp = total_income * (val_pct / 100.0)
+                # Deteksi mana yang berubah oleh user secara real-time
+                if val_rp != cur_rp:
+                    cur_rp = val_rp
+                    cur_pct = (val_rp / total_income) * 100.0
+                elif val_pct != cur_pct:
+                    cur_pct = val_pct
+                    cur_rp = total_income * (val_pct / 100.0)
 
-        total_pct_sum += current_pct
-        total_rp_sum += current_rp
+        total_pct_sum += cur_pct
+        total_rp_sum += cur_rp
 
         updated_rows.append({
             "Category_Code": row["Category_Code"],
             "Category_Name": row["Category_Name"],
             "Type": row["Type"],
-            "Target_Percent": current_pct,
-            "Target_Budget": current_rp
+            "Target_Percent": cur_pct,
+            "Target_Budget": cur_rp
         })
 
+    # Simpan kembali ke session state secara live
+    st.session_state.live_budget = pd.DataFrame(updated_rows)
+
     st.markdown("---")
-    # Baris Total di Bawah
+    # Baris Total di Bawah dengan pemisah ribuan
     tot_c1, tot_c2, tot_c3 = st.columns([4, 2, 2])
     tot_c1.markdown("**TOTAL KESELURUHAN:**")
     tot_c3.markdown(f"**Rp {total_rp_sum:,.0f}**".replace(",", "."))
-    tot_c4_text = f"**{total_pct_sum:.2f}%**"
     
-    # Indikator warna total persentase (Harus 100% atau mendekati)
     if abs(total_pct_sum - 100.0) < 0.1:
         st.success(f"Total Alokasi Persentase: {total_pct_sum:.2f}% (Sempurna 100%)")
     else:
         st.warning(f"Total Alokasi Persentase saat ini: {total_pct_sum:.2f}% (Disarankan total mencapai 100%)")
 
     if st.button(T["save_setting"]):
-        new_df = pd.DataFrame(updated_rows)
-        update_budget_targets(new_df)
-        st.session_state.live_budget = new_df
+        update_budget_targets(st.session_state.live_budget)
         st.success(T["success_setting"])
         st.rerun()
 
@@ -510,7 +501,7 @@ if not tx_df.empty:
 
 st.markdown("---")
 
-# --- MODUL 5: TABEL MONITORING ANGGARAN ---
+# --- MODUL 5: TABEL MONITORING ANGGARAN (DENGAN PEMISAH RIBUAN) ---
 st.markdown(f"### {T['budget_vs_act']}")
 
 if not tx_df.empty:
