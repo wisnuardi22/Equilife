@@ -33,10 +33,18 @@ with col_lang:
 T = {
     "ID": {
         "title": "Equilife — Personal Financial Balance",
-        "caption": "Sistem Pengendalian Anggaran (Budget vs Actual), Multi-Rekening & Tingkat Konsumtif",
+        "caption": "Sistem Pengendalian Anggaran (Budget vs Actual), Multi-Rekening & Pengaturan Target Dinamis",
         "wallets": "💳 Saldo Rekening / Dompet Riil",
         "hide_bal": "Sembunyikan Saldo",
         "show_bal": "Tampilkan Saldo",
+        "setting_title": "⚙️ Pengaturan Target Anggaran & Sedekah",
+        "setting_desc": "Atur nominal target secara manual atau gunakan persentase dari total pemasukan untuk Zakat & Sedekah.",
+        "calc_mode": "Mode Hitung Zakat & Sedekah:",
+        "mode_manual": "Nominal Manual (Rp)",
+        "mode_percent": "Persentase dari Pemasukan (%)",
+        "input_percent": "Masukkan Persentase (%)",
+        "save_setting": "Simpan Pengaturan Target",
+        "success_setting": "Pengaturan target anggaran berhasil diperbarui!",
         "add_tx": "➕ Tambah Transaksi Baru (Input Cepat)",
         "tx_type": "Jenis Transaksi",
         "expense": "Pengeluaran",
@@ -83,10 +91,18 @@ T = {
     },
     "EN": {
         "title": "Equilife — Personal Financial Balance",
-        "caption": "Your personal financial dashboard to track income, expenses, and savings.",
+        "caption": "Your personal financial dashboard to track income, expenses, and dynamic budget settings.",
         "wallets": "💳 Account Balances / Real Wallets",
         "hide_bal": "Hide Balance",
         "show_bal": "Show Balance",
+        "setting_title": "⚙️ Budget Target & Charity Settings",
+        "setting_desc": "Set manual target amounts or use a percentage of total income for Zakat & Charity.",
+        "calc_mode": "Zakat & Charity Calculation Mode:",
+        "mode_manual": "Manual Amount (Rp)",
+        "mode_percent": "Percentage of Income (%)",
+        "input_percent": "Enter Percentage (%)",
+        "save_setting": "Save Target Settings",
+        "success_setting": "Budget settings updated successfully!",
         "add_tx": "➕ Add New Transaction (Quick Input)",
         "tx_type": "Transaction Type",
         "expense": "Expense",
@@ -163,22 +179,32 @@ def init_database():
             {"Category_Code": "1201", "Category_Name": "Tabungan / Investasi", "Type": "Non-Konsumtif", "Target_Budget": 407500},
         ])
         
+        wb_settings = pd.DataFrame([
+            {"Setting_Key": "Zakat_Mode", "Setting_Value": "Percent"},
+            {"Setting_Key": "Zakat_Percent", "Setting_Value": "2.5"}
+        ])
+        
         wb_tx = pd.DataFrame(columns=["TX_ID", "Date", "Type", "Account_From", "Account_To", "Category_Code", "Amount", "Notes"])
         
         with pd.ExcelWriter(DB_FILE, engine="openpyxl") as writer:
             wb_accounts.to_excel(writer, sheet_name="Accounts", index=False)
             wb_budget.to_excel(writer, sheet_name="Budget", index=False)
+            wb_settings.to_excel(writer, sheet_name="Settings", index=False)
             wb_tx.to_excel(writer, sheet_name="Transactions", index=False)
 
 def load_data():
     init_database()
     accounts = pd.read_excel(DB_FILE, sheet_name="Accounts")
     budget = pd.read_excel(DB_FILE, sheet_name="Budget", dtype={"Category_Code": str})
+    try:
+        settings = pd.read_excel(DB_FILE, sheet_name="Settings")
+    except Exception:
+        settings = pd.DataFrame([{"Setting_Key": "Zakat_Mode", "Setting_Value": "Percent"}, {"Setting_Key": "Zakat_Percent", "Setting_Value": "2.5"}])
     transactions = pd.read_excel(DB_FILE, sheet_name="Transactions", dtype={"Category_Code": str})
-    return accounts, budget, transactions
+    return accounts, budget, settings, transactions
 
 def save_transaction(new_tx):
-    accounts, budget, transactions = load_data()
+    accounts, budget, settings, transactions = load_data()
     transactions = pd.concat([transactions, pd.DataFrame([new_tx])], ignore_index=True)
     
     amt = new_tx["Amount"]
@@ -193,10 +219,11 @@ def save_transaction(new_tx):
     with pd.ExcelWriter(DB_FILE, engine="openpyxl") as writer:
         accounts.to_excel(writer, sheet_name="Accounts", index=False)
         budget.to_excel(writer, sheet_name="Budget", index=False)
+        settings.to_excel(writer, sheet_name="Settings", index=False)
         transactions.to_excel(writer, sheet_name="Transactions", index=False)
 
 def delete_transaction(tx_id):
-    accounts, budget, transactions = load_data()
+    accounts, budget, settings, transactions = load_data()
     tx_to_delete = transactions[transactions["TX_ID"] == tx_id]
     
     if not tx_to_delete.empty:
@@ -216,13 +243,34 @@ def delete_transaction(tx_id):
         with pd.ExcelWriter(DB_FILE, engine="openpyxl") as writer:
             accounts.to_excel(writer, sheet_name="Accounts", index=False)
             budget.to_excel(writer, sheet_name="Budget", index=False)
+            settings.to_excel(writer, sheet_name="Settings", index=False)
             transactions.to_excel(writer, sheet_name="Transactions", index=False)
 
 def update_transaction(updated_tx):
     delete_transaction(updated_tx["TX_ID"])
     save_transaction(updated_tx)
 
-accounts_df, budget_df, tx_df = load_data()
+def update_budget_settings(new_budget_df, new_settings_df):
+    accounts, _, _, transactions = load_data()
+    with pd.ExcelWriter(DB_FILE, engine="openpyxl") as writer:
+        accounts.to_excel(writer, sheet_name="Accounts", index=False)
+        new_budget_df.to_excel(writer, sheet_name="Budget", index=False)
+        new_settings_df.to_excel(writer, sheet_name="Settings", index=False)
+        transactions.to_excel(writer, sheet_name="Transactions", index=False)
+
+accounts_df, budget_df, settings_df, tx_df = load_data()
+
+# --- HITUNG OTOMATIS ZAKAT JIKA MODE PERCENT ---
+zakat_mode = settings_df.loc[settings_df["Setting_Key"] == "Zakat_Mode", "Setting_Value"].values
+zakat_mode = zakat_mode[0] if len(zakat_mode) > 0 else "Percent"
+
+zakat_percent_val = settings_df.loc[settings_df["Setting_Key"] == "Zakat_Percent", "Setting_Value"].values
+zakat_percent_val = float(zakat_percent_val[0]) if len(zakat_percent_val) > 0 else 2.5
+
+if zakat_mode == "Percent" and not tx_df.empty:
+    total_income = tx_df[tx_df["Type"] == "Pemasukan"]["Amount"].sum()
+    calculated_zakat = total_income * (zakat_percent_val / 100)
+    budget_df.loc[budget_df["Category_Code"] == "5101", "Target_Budget"] = calculated_zakat
 
 # --- MODUL 1: WALLET CARDS ---
 if "show_balance" not in st.session_state:
@@ -244,6 +292,46 @@ for i, row in accounts_df.iterrows():
     cols[i].metric(row["Account_Name"], balance_display)
 
 st.markdown("---")
+
+# --- MODUL PENGATURAN TARGET & SEDEKAH ---
+with st.expander(T["setting_title"], expanded=False):
+    st.write(T["setting_desc"])
+    
+    with st.form("settings_form"):
+        mode_choice = st.radio(
+            T["calc_mode"], 
+            [T["mode_percent"], T["mode_manual"]], 
+            index=0 if zakat_mode == "Percent" else 1
+        )
+        
+        pct_input = st.number_input(T["input_percent"], min_value=0.0, max_value=100.0, value=zakat_percent_val, step=0.5)
+        
+        st.markdown("---")
+        st.markdown("**Atur Nominal Target Pos Pengeluaran Lainnya:**")
+        
+        edited_budget_df = st.data_editor(
+            budget_df, 
+            column_config={
+                "Category_Code": st.column_config.TextColumn("Kode", disabled=True),
+                "Category_Name": st.column_config.TextColumn("Kategori Pos", disabled=True),
+                "Type": st.column_config.TextColumn("Tipe", disabled=True),
+                "Target_Budget": st.column_config.NumberColumn(T["target"], format="Rp %d")
+            },
+            hide_index=True,
+            use_container_width=True
+        )
+        
+        submit_setting = st.form_submit_button(T["save_setting"])
+        
+        if submit_setting:
+            new_mode = "Percent" if mode_choice == T["mode_percent"] else "Manual"
+            new_settings = pd.DataFrame([
+                {"Setting_Key": "Zakat_Mode", "Setting_Value": new_mode},
+                {"Setting_Key": "Zakat_Percent", "Setting_Value": str(pct_input)}
+            ])
+            update_budget_settings(edited_budget_df, new_settings)
+            st.success(T["success_setting"])
+            st.rerun()
 
 # --- MODUL 2: FORM INPUT TRANSAKSI ---
 with st.expander(T["add_tx"], expanded=True):
@@ -433,4 +521,3 @@ if not tx_df.empty:
         fig.update_traces(textposition='inside', textinfo='percent+label')
         fig.update_layout(margin=dict(t=40, b=20, l=20, r=20), showlegend=True)
         st.plotly_chart(fig, use_container_width=True)
-        
