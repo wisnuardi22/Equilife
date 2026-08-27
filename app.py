@@ -6,7 +6,7 @@ import re
 from datetime import datetime
 from PIL import Image
 
-# --- CONFIG ---
+# --- CONFIG & PAGE SETUP ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 logo_path = os.path.join(BASE_DIR, "image", "logo.png")
 
@@ -24,139 +24,110 @@ st.set_page_config(
 # --- EXPERT CSS INJECTION (POPPINS & SOFT UI) ---
 st.markdown("""
 <style>
-    /* Import Poppins Font */
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
 
-    /* Global Font & Background */
     html, body, [class*="css"], .stApp, [data-testid="stAppViewContainer"] {
         font-family: 'Poppins', sans-serif !important;
-        background-color: #F4F7F8 !important;
+        background-color: #F8FAFC !important;
         color: #0F172A !important;
     }
     
-    /* Header Card (Expert Look) */
+    /* Header Card */
     .expert-header {
         background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
-        padding: 35px 40px;
+        padding: 30px 40px;
         border-radius: 24px;
         color: white;
-        box-shadow: 0 15px 35px -5px rgba(15, 23, 42, 0.2);
-        margin-bottom: 30px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
+        box-shadow: 0 15px 35px -5px rgba(15, 23, 42, 0.15);
+        margin-bottom: 25px;
     }
-    .header-text h1 {
+    .expert-header h1 {
         font-weight: 700;
         color: #00A884 !important;
         margin: 0 0 5px 0;
-        font-size: 32px;
-        letter-spacing: -0.5px;
+        font-size: 30px;
     }
-    .header-text p {
+    .expert-header p {
         color: #94A3B8;
-        font-size: 15px;
+        font-size: 14px;
         margin: 0;
-        font-weight: 300;
     }
 
-    /* Hide default borders for clean look */
-    [data-testid="stForm"] {
-        border: none !important;
-        padding: 0 !important;
-    }
-    
     /* Soft Metric Cards */
     div[data-testid="metric-container"] {
         background: #FFFFFF !important;
         border: none !important;
-        border-radius: 24px !important;
-        padding: 24px !important;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.03) !important;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-    div[data-testid="metric-container"]:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 12px 32px rgba(0,0,0,0.06) !important;
+        border-radius: 20px !important;
+        padding: 20px !important;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.03) !important;
     }
     [data-testid="stMetricValue"] {
         color: #0F172A !important;
         font-weight: 700 !important;
-        font-size: 26px !important;
+        font-size: 24px !important;
     }
     [data-testid="stMetricLabel"] {
         color: #64748B !important;
         font-weight: 500 !important;
-        font-size: 14px !important;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+        font-size: 13px !important;
     }
     
-    /* Elegant Pill Buttons */
+    /* Pill Buttons */
     .stButton>button {
         background: linear-gradient(135deg, #00A884, #007A63) !important;
         color: #FFFFFF !important;
         border: none !important;
-        border-radius: 50px !important; /* Pill shape */
-        padding: 10px 24px !important;
+        border-radius: 50px !important;
+        padding: 8px 20px !important;
         font-weight: 600 !important;
-        font-size: 15px !important;
-        box-shadow: 0 8px 16px rgba(0, 168, 132, 0.2) !important;
+        box-shadow: 0 4px 12px rgba(0, 168, 132, 0.2) !important;
         transition: all 0.3s ease !important;
     }
     .stButton>button:hover {
         transform: translateY(-2px) !important;
-        box-shadow: 0 12px 20px rgba(0, 168, 132, 0.3) !important;
     }
     
     /* Rounded Inputs */
     .stTextInput>div>div>input, .stNumberInput>div>div>input, .stSelectbox>div>div>div {
-        border-radius: 16px !important;
+        border-radius: 14px !important;
         border: 1px solid #E2E8F0 !important;
         background-color: #FFFFFF !important;
-        padding: 12px 16px !important;
-        font-weight: 500 !important;
-    }
-    .stTextInput>div>div>input:focus, .stNumberInput>div>div>input:focus {
-        border-color: #00A884 !important;
-        box-shadow: 0 0 0 3px rgba(0, 168, 132, 0.15) !important;
     }
 
     /* Expander Soft UI */
     .stExpander {
         background: #FFFFFF !important;
-        border-radius: 24px !important;
+        border-radius: 20px !important;
         border: none !important;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.03) !important;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.03) !important;
         margin-bottom: 20px !important;
     }
     summary {
         font-weight: 600 !important;
         color: #0F172A !important;
-        padding: 16px 20px !important;
-        border-radius: 24px !important;
-    }
-    summary:hover {
-        color: #00A884 !important;
-    }
-    div[data-testid="stExpanderDetails"] {
-        padding: 0 24px 24px 24px !important;
+        border-radius: 20px !important;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# --- HEADER (EXPERT LOOK) & LANGUAGE ---
-T_lang = st.radio("Lang", ["ID", "EN"], horizontal=True, label_visibility="collapsed")
+# --- HEADER & LANGUAGE SELECTOR (ID / EN) ---
+col_logo, col_title, col_lang = st.columns([1, 8, 2])
 
-# Kamus Teks UI
+with col_logo:
+    if isinstance(logo_img, Image.Image):
+        st.image(logo_img, width=60)
+
+with col_lang:
+    lang_choice = st.selectbox("Lang", ["ID", "EN"], label_visibility="collapsed")
+
 T = {
     "ID": {
-        "title": "Equilife",
-        "caption": "Personal Financial Balance & Budget System",
-        "wallets": "💳 Saldo Rekening Anda",
+        "title": "Equilife — Personal Financial Balance",
+        "caption": "Sistem Pengendalian Anggaran (Budget vs Actual), Multi-Rekening & Tingkat Konsumtif",
+        "wallets": "💳 Saldo Rekening / Dompet Riil",
         "hide_bal": "Sembunyikan Saldo",
         "show_bal": "Tampilkan Saldo",
-        "add_tx": "➕ Tambah Transaksi Baru",
+        "add_tx": "➕ Tambah Transaksi Baru (Input Cepat)",
         "tx_type": "Jenis Transaksi",
         "expense": "Pengeluaran",
         "income": "Pemasukan",
@@ -166,111 +137,99 @@ T = {
         "acc_to": "Rekening Tujuan",
         "from_acc": "Dari Rekening",
         "to_acc": "Ke Rekening",
-        "category": "Kategori Pengeluaran",
-        "not_needed": "- (Otomatis)",
-        "amount": "Nominal Transaksi",
-        "notes": "Catatan",
+        "category": "Kategori Pos Pengeluaran",
+        "not_needed": "- (Tidak Dibutuhkan)",
+        "amount": "Nominal Transaksi (Rp)",
+        "notes": "Keterangan",
         "save": "Simpan Transaksi",
         "success_save": "Transaksi berhasil disimpan!",
-        "correct_title": "✏️ Koreksi Riwayat",
-        "correct_desc": "Pilih transaksi untuk diedit atau dihapus:",
+        "correct_title": "✏️ Koreksi Transaksi (Edit / Hapus)",
+        "correct_desc": "Pilih transaksi di bawah ini untuk mengedit atau menghapusnya:",
         "select_tx": "Pilih Transaksi:",
         "btn_edit": "Edit Transaksi",
         "btn_del": "Hapus Transaksi",
-        "success_del": "berhasil dihapus. Saldo telah dipulihkan.",
-        "success_edit": "berhasil diperbarui.",
+        "success_del": "berhasil dihapus dan saldo dikembalikan!",
+        "success_edit": "berhasil diperbarui!",
         "save_changes": "Simpan Perubahan",
-        "budget_vs_act": "📋 Monitoring Anggaran",
+        "budget_vs_act": "📋 Monitoring Target Anggaran (Budget vs Actual)",
         "target": "Target (Rp)",
         "actual": "Realisasi (Rp)",
         "remaining": "Sisa (Rp)",
-        "status": "Status",
+        "status": "Status Anggaran",
         "status_safe": "🟢 Terpenuhi",
         "status_over": "🔴 Melampaui Batas",
-        "dash_title": "📊 Analisis Gaya Hidup",
-        "filter_mode": "Filter Dashboard:",
-        "monthly": "Bulan Ini",
+        "dash_title": "📊 Dashboard Interaktif & Analisis Konsumtif",
+        "filter_mode": "Tampilkan Berdasarkan Filter:",
+        "monthly": "Bulanan",
         "weekly": "Mingguan",
-        "week_num": "Pilih Minggu",
-        "lifestyle_ratio": "**Rasio Konsumtif**",
-        "life_metric": "Lifestyle Spending",
-        "wise": "🟢 Ideal",
+        "week_num": "Pilih Minggu ke-",
+        "lifestyle_ratio": "**Indikator Tingkat Konsumtif**",
+        "life_metric": "Rasio Pengeluaran Lifestyle",
+        "wise": "🟢 Proporsional",
         "warning": "🟡 Perlu Perhatian",
-        "high_cons": "🔴 Over-Konsumtif",
-        "pie_title": "Alokasi Dana",
-        "no_data": "Belum ada transaksi. Silakan tambah data di atas."
+        "high_cons": "🔴 Tingkat Konsumtif Tinggi",
+        "pie_title": "Proporsi Alokasi Pengeluaran",
+        "no_data": "Belum ada data transaksi. Silakan input transaksi pertama kamu di atas!"
     },
     "EN": {
-        "title": "Equilife",
-        "caption": "Personal Financial Balance & Budget System",
-        "wallets": "💳 Your Balances",
+        "title": "Equilife — Personal Financial Balance",
+        "caption": "Your personal financial dashboard to track income, expenses, and savings.",
+        "wallets": "💳 Account Balances / Real Wallets",
         "hide_bal": "Hide Balance",
         "show_bal": "Show Balance",
-        "add_tx": "➕ Add New Transaction",
+        "add_tx": "➕ Add New Transaction (Quick Input)",
         "tx_type": "Transaction Type",
         "expense": "Expense",
         "income": "Income",
-        "transfer": "Transfer",
+        "transfer": "Transfer Between Accounts",
         "date": "Date (dd/mm/yyyy)",
         "acc_from": "Source Account",
         "acc_to": "Destination Account",
         "from_acc": "From Account",
         "to_acc": "To Account",
         "category": "Expense Category",
-        "not_needed": "- (Auto)",
-        "amount": "Transaction Amount",
+        "not_needed": "- (Not Required)",
+        "amount": "Transaction Amount (Rp)",
         "notes": "Notes",
         "save": "Save Transaction",
         "success_save": "Transaction saved successfully!",
-        "correct_title": "✏️ History Correction",
-        "correct_desc": "Select a transaction to edit or delete:",
+        "correct_title": "✏️ Transaction Correction (Edit / Delete)",
+        "correct_desc": "Select a transaction below to edit or delete it:",
         "select_tx": "Select Transaction:",
         "btn_edit": "Edit Transaction",
         "btn_del": "Delete Transaction",
-        "success_del": "deleted. Balances restored.",
-        "success_edit": "updated successfully.",
+        "success_del": "deleted successfully and balance restored!",
+        "success_edit": "updated successfully!",
         "save_changes": "Save Changes",
-        "budget_vs_act": "📋 Budget Monitoring",
+        "budget_vs_act": "📋 Budget Target Monitoring (Budget vs Actual)",
         "target": "Target (Rp)",
         "actual": "Actual (Rp)",
         "remaining": "Remaining (Rp)",
-        "status": "Status",
-        "status_safe": "🟢 On Track",
+        "status": "Budget Status",
+        "status_safe": "🟢 Target Met",
         "status_over": "🔴 Exceeded",
-        "dash_title": "📊 Lifestyle Analysis",
-        "filter_mode": "Dashboard Filter:",
-        "monthly": "This Month",
+        "dash_title": "📊 Interactive Dashboard & Consumption Analysis",
+        "filter_mode": "Display Filtered By:",
+        "monthly": "Monthly",
         "weekly": "Weekly",
-        "week_num": "Select Week",
-        "lifestyle_ratio": "**Consumption Ratio**",
-        "life_metric": "Lifestyle Spending",
-        "wise": "🟢 Ideal",
+        "week_num": "Select Week No.",
+        "lifestyle_ratio": "**Lifestyle Consumption Indicator**",
+        "life_metric": "Lifestyle Spending Ratio",
+        "wise": "🟢 Proportional",
         "warning": "🟡 Attention Needed",
-        "high_cons": "🔴 Over-Consumptive",
-        "pie_title": "Fund Allocation",
-        "no_data": "No transactions yet. Please add data above."
+        "high_cons": "🔴 High Consumption Level",
+        "pie_title": "Expense Allocation Ratio",
+        "no_data": "No transaction data available yet. Please add your first transaction above!"
     }
-}[T_lang]
+}[lang_choice]
 
-st.markdown(f"""
-<div class="expert-header">
-    <div class="header-text">
+with col_title:
+    st.markdown(f"""
+    <div class="expert-header">
         <h1>{T['title']}</h1>
         <p>{T['caption']}</p>
     </div>
-</div>
-""", unsafe_allow_html=True)
-
-# --- HELPER PARSER REBUAN ---
-def format_thousand(val):
-    clean = re.sub(r'[^\d]', '', str(val))
-    if not clean:
-        return "0"
-    return f"{int(clean):,.0f}".replace(",", ".")
-
-def parse_thousand(val_str):
-    clean = re.sub(r'[^\d]', '', str(val_str))
-    return int(clean) if clean else 0
+    """, unsafe_allow_html=True)
 
 DB_FILE = os.path.join(BASE_DIR, "database.xlsx")
 
@@ -359,13 +318,14 @@ def update_transaction(updated_tx):
 
 accounts_df, budget_df, tx_df = load_data()
 
-# --- MODUL 1: WALLET CARDS ---
+# --- MODUL 1: WALLET CARDS (Tanpa Ikon) ---
 if "show_balance" not in st.session_state:
     st.session_state.show_balance = True
 
 c_title, c_toggle = st.columns([8, 2])
 with c_title:
     st.markdown(f"### {T['wallets']}")
+
 with c_toggle:
     btn_label = T["hide_bal"] if st.session_state.show_balance else T["show_bal"]
     if st.button(btn_label, use_container_width=True):
@@ -409,15 +369,14 @@ with st.expander(T["add_tx"], expanded=True):
             c4.text_input(T["category"], value=T["not_needed"], disabled=True)
             cat_code = "-"
         
-        raw_amount_input = c5.text_input(T["amount"], value="50.000")
-        formatted_amount_str = format_thousand(raw_amount_input)
+        amount = c5.number_input(T["amount"], min_value=0, value=50000, step=10000)
+        c5.markdown(f"Format: **Rp {amount:,.0f}**".replace(",", "."))
         
         notes = c6.text_input(T["notes"], "")
         
         submit = st.form_submit_button(T["save"])
         
         if submit:
-            final_amount = parse_thousand(formatted_amount_str)
             tx_id = f"TX-{len(tx_df)+1:04d}"
             new_record = {
                 "TX_ID": tx_id,
@@ -426,7 +385,7 @@ with st.expander(T["add_tx"], expanded=True):
                 "Account_From": acc_from,
                 "Account_To": acc_to,
                 "Category_Code": str(cat_code),
-                "Amount": final_amount,
+                "Amount": int(amount),
                 "Notes": notes
             }
             save_transaction(new_record)
@@ -456,23 +415,24 @@ if not tx_df.empty:
 
         if st.session_state.edit_active_id:
             tx_row = tx_df[tx_df["TX_ID"] == st.session_state.edit_active_id].iloc[0]
-            st.markdown(f"**Edit Data: {st.session_state.edit_active_id}**")
+            st.markdown("---")
+            st.markdown(f"**Edit Form: {st.session_state.edit_active_id}**")
             
             with st.form("edit_tx_form"):
                 ec1, ec2 = st.columns(2)
-                
                 try:
                     init_date = datetime.strptime(str(tx_row["Date"]), "%d/%m/%Y")
                 except Exception:
                     init_date = datetime.now()
                     
                 e_date = ec1.date_input(T["date"], init_date, format="DD/MM/YYYY")
-                e_amount_input = ec2.text_input(T["amount"], value=format_thousand(tx_row["Amount"]))
+                e_amount = ec2.number_input(T["amount"], min_value=0, value=int(tx_row["Amount"]), step=10000)
+                ec2.markdown(f"Format: **Rp {e_amount:,.0f}**".replace(",", "."))
+                
                 e_notes = st.text_input(T["notes"], value=str(tx_row["Notes"]))
                 e_submit = st.form_submit_button(T["save_changes"])
                 
                 if e_submit:
-                    e_final_amount = parse_thousand(e_amount_input)
                     updated_record = {
                         "TX_ID": st.session_state.edit_active_id,
                         "Date": e_date.strftime("%d/%m/%Y"),
@@ -480,7 +440,7 @@ if not tx_df.empty:
                         "Account_From": tx_row["Account_From"],
                         "Account_To": tx_row["Account_To"],
                         "Category_Code": str(tx_row["Category_Code"]),
-                        "Amount": e_final_amount,
+                        "Amount": int(e_amount),
                         "Notes": e_notes
                     }
                     update_transaction(updated_record)
@@ -490,7 +450,7 @@ if not tx_df.empty:
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-# --- MODUL 4: TABEL MONITORING ---
+# --- MODUL 4: TABEL MONITORING ANGGARAN ---
 st.markdown(f"### {T['budget_vs_act']}")
 
 if not tx_df.empty:
@@ -520,7 +480,7 @@ else:
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-# --- MODUL 5: DASHBOARD ---
+# --- MODUL 5: DASHBOARD INTERAKTIF ---
 st.markdown(f"### {T['dash_title']}")
 
 if not tx_df.empty:
@@ -563,7 +523,7 @@ if not tx_df.empty:
             title=T["pie_title"], 
             color="Type",
             hole=0.6,
-            color_discrete_map={"Konsumtif": "#0F172A", "Non-Konsumtif": "#00A884"}
+            color_discrete_map={"Konsumtif": "#E11D48", "Non-Konsumtif": "#00A884"}
         )
         fig.update_traces(textposition='inside', textinfo='percent+label', marker=dict(line=dict(color='#FFFFFF', width=3)))
         fig.update_layout(margin=dict(t=40, b=20, l=20, r=20), showlegend=True, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
