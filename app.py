@@ -33,7 +33,7 @@ with col_title:
     st.title("Equilife — Personal Financial Balance")
     st.caption("Your personal financial dashboard to track income, expenses, and savings.")
 
-DB_FILE = "database.xlsx"
+DB_FILE = os.path.join(BASE_DIR, "database.xlsx")
 
 # --- HELPER FUNCTIONS FOR EXCEL DATABASE ---
 def init_database():
@@ -77,7 +77,6 @@ def save_transaction(new_tx):
     accounts, budget, transactions = load_data()
     transactions = pd.concat([transactions, pd.DataFrame([new_tx])], ignore_index=True)
     
-    # Update Account Balances
     amt = new_tx["Amount"]
     if new_tx["Type"] == "Pengeluaran":
         accounts.loc[accounts["Account_Name"] == new_tx["Account_From"], "Current_Balance"] -= amt
@@ -91,6 +90,30 @@ def save_transaction(new_tx):
         accounts.to_excel(writer, sheet_name="Accounts", index=False)
         budget.to_excel(writer, sheet_name="Budget", index=False)
         transactions.to_excel(writer, sheet_name="Transactions", index=False)
+
+def delete_transaction(tx_id):
+    accounts, budget, transactions = load_data()
+    tx_to_delete = transactions[transactions["TX_ID"] == tx_id]
+    
+    if not tx_to_delete.empty:
+        row = tx_to_delete.iloc[0]
+        amt = row["Amount"]
+        
+        # Restore balances automatically
+        if row["Type"] == "Pengeluaran":
+            accounts.loc[accounts["Account_Name"] == row["Account_From"], "Current_Balance"] += amt
+        elif row["Type"] == "Pemasukan":
+            accounts.loc[accounts["Account_Name"] == row["Account_To"], "Current_Balance"] -= amt
+        elif row["Type"] == "Transfer Antar Rekening":
+            accounts.loc[accounts["Account_Name"] == row["Account_From"], "Current_Balance"] += amt
+            accounts.loc[accounts["Account_Name"] == row["Account_To"], "Current_Balance"] -= amt
+
+        transactions = transactions[transactions["TX_ID"] != tx_id]
+
+        with pd.ExcelWriter(DB_FILE, engine="openpyxl") as writer:
+            accounts.to_excel(writer, sheet_name="Accounts", index=False)
+            budget.to_excel(writer, sheet_name="Budget", index=False)
+            transactions.to_excel(writer, sheet_name="Transactions", index=False)
 
 # --- LOAD DATA ---
 accounts_df, budget_df, tx_df = load_data()
@@ -122,9 +145,15 @@ with st.expander("➕ **Tambah Transaksi Baru (Input Cepat)**", expanded=True):
             acc_to = c3.selectbox("Ke Rekening", acc_list, index=1)
             
         c4, c5, c6 = st.columns([3, 2, 4])
-        cat_options = budget_df["Category_Code"].astype(str) + " - " + budget_df["Category_Name"]
-        cat_selected = c4.selectbox("Kategori Pos Pengeluaran", cat_options if tx_type == "Pengeluaran" else ["-"])
-        cat_code = cat_selected.split(" - ")[0] if tx_type == "Pengeluaran" else "-"
+        
+        # Kategori HANYA MUNCUL jika jenis transaksi adalah Pengeluaran
+        if tx_type == "Pengeluaran":
+            cat_options = budget_df["Category_Code"].astype(str) + " - " + budget_df["Category_Name"]
+            cat_selected = c4.selectbox("Kategori Pos Pengeluaran", cat_options)
+            cat_code = cat_selected.split(" - ")[0]
+        else:
+            cat_selected = c4.text_input("Kategori Pos Pengeluaran", value="-", disabled=True)
+            cat_code = "-"
         
         amount = c5.number_input("Nominal (Rp)", min_value=0, value=50000, step=5000)
         notes = c6.text_input("Keterangan", "")
@@ -147,7 +176,20 @@ with st.expander("➕ **Tambah Transaksi Baru (Input Cepat)**", expanded=True):
             st.success("Transaksi berhasil disimpan!")
             st.rerun()
 
-# --- MODUL 3: FILTER & DASHBOARD KONSUMTIF ---
+# --- MODUL 3: RIWAYAT & CORRECTION (HAPUS TRANSAKSI SALAH) ---
+if not tx_df.empty:
+    with st.expander("🗑️ **Koreksi / Hapus Transaksi Salah**"):
+        st.write("Jika ada transaksi yang salah diinput, pilih transaksi di bawah ini untuk menghapusnya (saldo akan otomatis dikembalikan):")
+        tx_options = tx_df.apply(lambda r: f"{r['TX_ID']} | {r['Date']} | {r['Type']} | Rp {r['Amount']:,.0f} | {r['Notes']}", axis=1)
+        selected_tx = st.selectbox("Pilih Transaksi yang Akan Dihapus:", tx_options)
+        
+        if st.button("❌ Hapus Transaksi Ini"):
+            selected_tx_id = selected_tx.split(" | ")[0]
+            delete_transaction(selected_tx_id)
+            st.success(f"Transaksi {selected_tx_id} berhasil dihapus dan saldo rekening dikembalikan!")
+            st.rerun()
+
+# --- MODUL 4: FILTER & DASHBOARD KONSUMTIF ---
 st.markdown("### 📊 Dashboard Equilife & Analysis")
 
 st.sidebar.header("⚙️ Filter Dashboard")
@@ -163,7 +205,6 @@ if not tx_df.empty:
     else:
         filtered_tx = tx_df[tx_df["Type"] == "Pengeluaran"]
         
-    # Budget vs Actual Calculation
     merged_budget = budget_df.copy()
     actual_spending = filtered_tx.groupby("Category_Code")["Amount"].sum().reset_index()
     merged_budget = pd.merge(merged_budget, actual_spending, on="Category_Code", how="left").fillna(0)
@@ -171,7 +212,6 @@ if not tx_df.empty:
     merged_budget["Remaining"] = merged_budget["Target_Budget"] - merged_budget["Actual_Spending"]
     merged_budget["Status"] = merged_budget["Remaining"].apply(lambda x: "🟢 Aman" if x >= 0 else "🔴 Overbudget")
 
-    # Calculate Consumption Ratio
     total_spent = merged_budget["Actual_Spending"].sum()
     konsumtif_spent = merged_budget[merged_budget["Type"] == "Konsumtif"]["Actual_Spending"].sum()
     ratio_konsumtif = (konsumtif_spent / 5700000) * 100 if 5700000 > 0 else 0
@@ -196,7 +236,6 @@ if not tx_df.empty:
         status_color = "🟢 Bijak" if ratio_konsumtif < 20 else ("🟡 Waspada" if ratio_konsumtif <= 35 else "🔴 Konsumtif Tinggi")
         st.metric("Rasio Pengeluaran Lifestyle", f"{ratio_konsumtif:.1f}%", f"Status: {status_color}")
         
-        # Pie Chart Konsumtif vs Non-Konsumtif
         chart_data = merged_budget.groupby("Type")["Actual_Spending"].sum().reset_index()
         fig = px.pie(chart_data, values="Actual_Spending", names="Type", title="Proporsi Pengeluaran", color="Type",
                      color_discrete_map={"Konsumtif": "#FF4B4B", "Non-Konsumtif": "#00C853"})
