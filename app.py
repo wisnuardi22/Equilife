@@ -360,7 +360,7 @@ with st.expander(T["add_tx"], expanded=True):
             st.success(T["success_save"])
             st.rerun()
 
-# --- MODUL 3: PENGATURAN TARGET INTERAKTIF (LIVE CALCULATION & TOTAL) ---
+# --- MODUL 3: PENGATURAN TARGET MENGGUNAKAN DATA EDITOR DENGAN PEMISAH RIBUAN ---
 with st.expander(T["setting_title"], expanded=True):
     st.write(T["setting_desc"])
     if total_income > 0:
@@ -368,76 +368,58 @@ with st.expander(T["setting_title"], expanded=True):
     else:
         st.warning("Belum ada pemasukan tercatat. Silakan masukkan gaji/pemasukan terlebih dahulu pada menu input transaksi di atas.")
 
-    # Inisialisasi session state untuk live update
-    if "live_budget" not in st.session_state or len(st.session_state.live_budget) != len(budget_df):
-        st.session_state.live_budget = budget_df.copy()
+    # Gunakan st.data_editor agar tampil bersih sebagai tabel interaktif dengan pemisah ribuan
+    edited_budget_df = st.data_editor(
+        budget_df,
+        column_config={
+            "Category_Code": st.column_config.TextColumn("Kode", disabled=True),
+            "Category_Name": st.column_config.TextColumn("Kategori Pos", disabled=True),
+            "Type": st.column_config.TextColumn("Tipe", disabled=True),
+            "Target_Percent": st.column_config.NumberColumn("Target (%)", format="%.2f %%", min_value=0.0, max_value=100.0, step=0.1),
+            "Target_Budget": st.column_config.NumberColumn(T["target"], format="Rp %,d", min_value=0.0, step=10000.0)
+        },
+        hide_index=True,
+        use_container_width=True
+    )
 
-    h1, h2, h3, h4 = st.columns([1, 3, 2, 2])
-    h1.markdown("**Kode**")
-    h2.markdown("**Kategori Pos**")
-    h3.markdown("**Target (Rp)**")
-    h4.markdown("**Target (%)**")
-
-    updated_rows = []
-    total_pct_sum = 0.0
-    total_rp_sum = 0.0
-
-    for idx, row in st.session_state.live_budget.iterrows():
-        c1, c2, c3, c4 = st.columns([1, 3, 2, 2])
-        
-        c1.text(row["Category_Code"])
-        c2.text(row["Category_Name"])
-        
-        cur_rp = float(row["Target_Budget"])
-        cur_pct = float(row["Target_Percent"])
+    # Hitung total persentase dan total rupiah dari hasil editan tabel secara real-time
+    total_pct_sum = edited_budget_df["Target_Percent"].sum()
+    
+    # Sinkronisasi otomatis nilai rupiah/persen saat tabel diedit
+    for idx, row in edited_budget_df.iterrows():
+        pct = float(row["Target_Percent"])
+        bud = float(row["Target_Budget"])
         
         if row["Category_Code"] == "5101":
-            cur_pct = 2.5
+            edited_budget_df.at[idx, "Target_Percent"] = 2.5
             if total_income > 0:
-                cur_rp = total_income * 0.025
-            val_rp = c3.number_input(f"rp_{idx}", value=cur_rp, format="%.0f", disabled=True, label_visibility="collapsed")
-            val_pct = c4.number_input(f"pct_{idx}", value=cur_pct, format="%.2f", disabled=True, label_visibility="collapsed")
+                edited_budget_df.at[idx, "Target_Budget"] = total_income * (2.5 / 100.0)
         else:
-            # Gunakan key unik agar Streamlit merespons setiap perubahan ketikan secara instan (rerun otomatis)
-            val_rp = c3.number_input(f"rp_{idx}", value=cur_rp, step=10000.0, format="%.0f", label_visibility="collapsed", key=f"input_rp_{idx}")
-            val_pct = c4.number_input(f"pct_{idx}", value=cur_pct, step=0.1, format="%.2f", label_visibility="collapsed", key=f"input_pct_{idx}")
-            
             if total_income > 0:
-                # Deteksi mana yang berubah oleh user secara real-time
-                if val_rp != cur_rp:
-                    cur_rp = val_rp
-                    cur_pct = (val_rp / total_income) * 100.0
-                elif val_pct != cur_pct:
-                    cur_pct = val_pct
-                    cur_rp = total_income * (val_pct / 100.0)
+                # Jika nilai persen diubah, hitung rupiahnya
+                orig_pct = float(budget_df.loc[idx, "Target_Percent"])
+                if pct != orig_pct:
+                    edited_budget_df.at[idx, "Target_Budget"] = total_income * (pct / 100.0)
+                # Jika nilai rupiah diubah, hitung persennya
+                else:
+                    orig_bud = float(budget_df.loc[idx, "Target_Budget"])
+                    if bud != orig_bud:
+                        edited_budget_df.at[idx, "Target_Percent"] = (bud / total_income) * 100.0
 
-        total_pct_sum += cur_pct
-        total_rp_sum += cur_rp
-
-        updated_rows.append({
-            "Category_Code": row["Category_Code"],
-            "Category_Name": row["Category_Name"],
-            "Type": row["Type"],
-            "Target_Percent": cur_pct,
-            "Target_Budget": cur_rp
-        })
-
-    # Simpan kembali ke session state secara live
-    st.session_state.live_budget = pd.DataFrame(updated_rows)
+    total_rp_sum = edited_budget_df["Target_Budget"].sum()
 
     st.markdown("---")
     # Baris Total di Bawah dengan pemisah ribuan
-    tot_c1, tot_c2, tot_c3 = st.columns([4, 2, 2])
-    tot_c1.markdown("**TOTAL KESELURUHAN:**")
-    tot_c3.markdown(f"**Rp {total_rp_sum:,.0f}**".replace(",", "."))
+    tot_c1, tot_c2 = st.columns([6, 4])
+    tot_c1.markdown(f"**TOTAL KESELURUHAN ALOKASI:** Rp {total_rp_sum:,.0f}".replace(",", "."))
     
     if abs(total_pct_sum - 100.0) < 0.1:
-        st.success(f"Total Alokasi Persentase: {total_pct_sum:.2f}% (Sempurna 100%)")
+        tot_c2.success(f"Total Persentase: {total_pct_sum:.2f}% (Sempurna 100%)")
     else:
-        st.warning(f"Total Alokasi Persentase saat ini: {total_pct_sum:.2f}% (Disarankan total mencapai 100%)")
+        tot_c2.warning(f"Total Persentase: {total_pct_sum:.2f}% (Disarankan total 100%)")
 
     if st.button(T["save_setting"]):
-        update_budget_targets(st.session_state.live_budget)
+        update_budget_targets(edited_budget_df)
         st.success(T["success_setting"])
         st.rerun()
 
@@ -582,4 +564,5 @@ if not tx_df.empty:
         )
         fig.update_traces(textposition='inside', textinfo='percent+label')
         fig.update_layout(margin=dict(t=40, b=20, l=20, r=20), showlegend=True)
+        st.plotly_clock = fig
         st.plotly_chart(fig, use_container_width=True)
