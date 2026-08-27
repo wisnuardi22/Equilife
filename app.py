@@ -195,8 +195,9 @@ def load_data():
         budget = pd.read_excel(DB_FILE, sheet_name="Budget", dtype={"Category_Code": str})
         if "Target_Percent" not in budget.columns:
             budget["Target_Percent"] = 0.0
-        budget["Target_Percent"] = pd.to_numeric(budget["Target_Percent"], errors="coerce").fillna(0.0)
-        budget["Target_Budget"] = pd.to_numeric(budget["Target_Budget"], errors="coerce").fillna(0.0)
+        # Paksa konversi kolom ke tipe numerik secara eksplisit
+        budget["Target_Percent"] = pd.to_numeric(budget["Target_Percent"], errors="coerce").fillna(0.0).astype(float)
+        budget["Target_Budget"] = pd.to_numeric(budget["Target_Budget"], errors="coerce").fillna(0.0).astype(float)
     except Exception:
         budget = pd.DataFrame(columns=["Category_Code", "Category_Name", "Type", "Target_Percent", "Target_Budget"])
     transactions = pd.read_excel(DB_FILE, sheet_name="Transactions", dtype={"Category_Code": str})
@@ -271,16 +272,20 @@ def add_new_account(acc_name, initial_bal):
 
 accounts_df, budget_df, tx_df = load_data()
 
+# Pastikan tipe data dataframe target konsisten float
+budget_df["Target_Percent"] = budget_df["Target_Percent"].astype(float)
+budget_df["Target_Budget"] = budget_df["Target_Budget"].astype(float)
+
 # --- SINKRONISASI TARGET BERDASARKAN TOTAL PEMASUKAN ---
 total_income = tx_df[tx_df["Type"] == "Pemasukan"]["Amount"].sum() if not tx_df.empty else 0
 
 for idx, row in budget_df.iterrows():
-    pct = float(row["Target_Percent"]) if pd.notnull(row["Target_Percent"]) else 0.0
+    pct = float(row["Target_Percent"])
     if row["Category_Code"] == "5101":
         pct = 2.5
-        budget_df.at[idx, "Target_Percent"] = 2.5
+        budget_df.loc[idx, "Target_Percent"] = 2.5
     
-    budget_df.at[idx, "Target_Budget"] = float(total_income) * (pct / 100.0)
+    budget_df.loc[idx, "Target_Budget"] = float(total_income) * (pct / 100.0)
 
 # --- MODUL 1: WALLET CARDS & TAMBAH AKUN ---
 if "show_balance" not in st.session_state:
@@ -391,12 +396,15 @@ with st.expander(T["setting_title"], expanded=False):
         submit_setting = st.form_submit_button(T["save_setting"])
         
         if submit_setting:
+            edited_budget_df["Target_Percent"] = edited_budget_df["Target_Percent"].astype(float)
+            edited_budget_df["Target_Budget"] = edited_budget_df["Target_Budget"].astype(float)
+            
             for idx, row in edited_budget_df.iterrows():
                 if row["Category_Code"] == "5101":
-                    edited_budget_df.at[idx, "Target_Percent"] = 2.5
+                    edited_budget_df.loc[idx, "Target_Percent"] = 2.5
                 
-                pct = float(edited_budget_df.loc[idx, "Target_Percent"]) if pd.notnull(edited_budget_df.loc[idx, "Target_Percent"]) else 0.0
-                edited_budget_df.at[idx, "Target_Budget"] = float(total_income) * (pct / 100.0)
+                pct = float(edited_budget_df.loc[idx, "Target_Percent"])
+                edited_budget_df.loc[idx, "Target_Budget"] = float(total_income) * (pct / 100.0)
 
             update_budget_targets(edited_budget_df)
             st.success(T["success_setting"])
@@ -473,7 +481,6 @@ if not tx_df.empty:
     merged_budget.rename(columns={"Amount": "Actual_Spending"}, inplace=True)
     merged_budget["Remaining"] = merged_budget["Target_Budget"] - merged_budget["Actual_Spending"]
     
-    # Logika Status Diperbaiki: Terpenuhi jika Aktual <= Target, Melampaui jika Aktual > Target
     merged_budget["Status"] = merged_budget.apply(
         lambda r: T["status_safe"] if r["Actual_Spending"] <= r["Target_Budget"] else T["status_over"], 
         axis=1
