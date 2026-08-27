@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import os
-import re
 from datetime import datetime
 from PIL import Image
 
@@ -20,95 +19,6 @@ st.set_page_config(
     layout="wide", 
     page_icon=logo_img
 )
-
-# --- EXPERT CSS INJECTION (POPPINS & SOFT UI) ---
-st.markdown("""
-<style>
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
-
-    html, body, [class*="css"], .stApp, [data-testid="stAppViewContainer"] {
-        font-family: 'Poppins', sans-serif !important;
-        background-color: #F8FAFC !important;
-        color: #0F172A !important;
-    }
-    
-    /* Header Card */
-    .expert-header {
-        background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
-        padding: 30px 40px;
-        border-radius: 24px;
-        color: white;
-        box-shadow: 0 15px 35px -5px rgba(15, 23, 42, 0.15);
-        margin-bottom: 25px;
-    }
-    .expert-header h1 {
-        font-weight: 700;
-        color: #00A884 !important;
-        margin: 0 0 5px 0;
-        font-size: 30px;
-    }
-    .expert-header p {
-        color: #94A3B8;
-        font-size: 14px;
-        margin: 0;
-    }
-
-    /* Soft Metric Cards */
-    div[data-testid="metric-container"] {
-        background: #FFFFFF !important;
-        border: none !important;
-        border-radius: 20px !important;
-        padding: 20px !important;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.03) !important;
-    }
-    [data-testid="stMetricValue"] {
-        color: #0F172A !important;
-        font-weight: 700 !important;
-        font-size: 24px !important;
-    }
-    [data-testid="stMetricLabel"] {
-        color: #64748B !important;
-        font-weight: 500 !important;
-        font-size: 13px !important;
-    }
-    
-    /* Pill Buttons */
-    .stButton>button {
-        background: linear-gradient(135deg, #00A884, #007A63) !important;
-        color: #FFFFFF !important;
-        border: none !important;
-        border-radius: 50px !important;
-        padding: 8px 20px !important;
-        font-weight: 600 !important;
-        box-shadow: 0 4px 12px rgba(0, 168, 132, 0.2) !important;
-        transition: all 0.3s ease !important;
-    }
-    .stButton>button:hover {
-        transform: translateY(-2px) !important;
-    }
-    
-    /* Rounded Inputs */
-    .stTextInput>div>div>input, .stNumberInput>div>div>input, .stSelectbox>div>div>div {
-        border-radius: 14px !important;
-        border: 1px solid #E2E8F0 !important;
-        background-color: #FFFFFF !important;
-    }
-
-    /* Expander Soft UI */
-    .stExpander {
-        background: #FFFFFF !important;
-        border-radius: 20px !important;
-        border: none !important;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.03) !important;
-        margin-bottom: 20px !important;
-    }
-    summary {
-        font-weight: 600 !important;
-        color: #0F172A !important;
-        border-radius: 20px !important;
-    }
-</style>
-""", unsafe_allow_html=True)
 
 # --- HEADER & LANGUAGE SELECTOR (ID / EN) ---
 col_logo, col_title, col_lang = st.columns([1, 8, 2])
@@ -156,8 +66,8 @@ T = {
         "actual": "Realisasi (Rp)",
         "remaining": "Sisa (Rp)",
         "status": "Status Anggaran",
-        "status_safe": "🟢 Terpenuhi",
-        "status_over": "🔴 Melampaui Batas",
+        "status_safe": "Terpenuhi",
+        "status_over": "Melampaui Batas",
         "dash_title": "📊 Dashboard Interaktif & Analisis Konsumtif",
         "filter_mode": "Tampilkan Berdasarkan Filter:",
         "monthly": "Bulanan",
@@ -165,9 +75,9 @@ T = {
         "week_num": "Pilih Minggu ke-",
         "lifestyle_ratio": "**Indikator Tingkat Konsumtif**",
         "life_metric": "Rasio Pengeluaran Lifestyle",
-        "wise": "🟢 Proporsional",
-        "warning": "🟡 Perlu Perhatian",
-        "high_cons": "🔴 Tingkat Konsumtif Tinggi",
+        "wise": "Proporsional",
+        "warning": "Perlu Perhatian",
+        "high_cons": "Tingkat Konsumtif Tinggi",
         "pie_title": "Proporsi Alokasi Pengeluaran",
         "no_data": "Belum ada data transaksi. Silakan input transaksi pertama kamu di atas!"
     },
@@ -206,8 +116,8 @@ T = {
         "actual": "Actual (Rp)",
         "remaining": "Remaining (Rp)",
         "status": "Budget Status",
-        "status_safe": "🟢 Target Met",
-        "status_over": "🔴 Exceeded",
+        "status_safe": "Target Met",
+        "status_over": "Exceeded",
         "dash_title": "📊 Interactive Dashboard & Consumption Analysis",
         "filter_mode": "Display Filtered By:",
         "monthly": "Monthly",
@@ -215,21 +125,17 @@ T = {
         "week_num": "Select Week No.",
         "lifestyle_ratio": "**Lifestyle Consumption Indicator**",
         "life_metric": "Lifestyle Spending Ratio",
-        "wise": "🟢 Proportional",
-        "warning": "🟡 Attention Needed",
-        "high_cons": "🔴 High Consumption Level",
+        "wise": "Proportional",
+        "warning": "Attention Needed",
+        "high_cons": "High Consumption Level",
         "pie_title": "Expense Allocation Ratio",
         "no_data": "No transaction data available yet. Please add your first transaction above!"
     }
 }[lang_choice]
 
 with col_title:
-    st.markdown(f"""
-    <div class="expert-header">
-        <h1>{T['title']}</h1>
-        <p>{T['caption']}</p>
-    </div>
-    """, unsafe_allow_html=True)
+    st.title(T['title'])
+    st.caption(T['caption'])
 
 DB_FILE = os.path.join(BASE_DIR, "database.xlsx")
 
@@ -318,7 +224,7 @@ def update_transaction(updated_tx):
 
 accounts_df, budget_df, tx_df = load_data()
 
-# --- MODUL 1: WALLET CARDS (Tanpa Ikon) ---
+# --- MODUL 1: WALLET CARDS ---
 if "show_balance" not in st.session_state:
     st.session_state.show_balance = True
 
@@ -337,7 +243,7 @@ for i, row in accounts_df.iterrows():
     balance_display = f"Rp {row['Current_Balance']:,.0f}".replace(",", ".") if st.session_state.show_balance else "Rp ••••••••"
     cols[i].metric(row["Account_Name"], balance_display)
 
-st.markdown("<br>", unsafe_allow_html=True)
+st.markdown("---")
 
 # --- MODUL 2: FORM INPUT TRANSAKSI ---
 with st.expander(T["add_tx"], expanded=True):
@@ -448,7 +354,7 @@ if not tx_df.empty:
                     st.success(f"{st.session_state.edit_active_id} {T['success_edit']}")
                     st.rerun()
 
-st.markdown("<br>", unsafe_allow_html=True)
+st.markdown("---")
 
 # --- MODUL 4: TABEL MONITORING ANGGARAN ---
 st.markdown(f"### {T['budget_vs_act']}")
@@ -478,7 +384,7 @@ if not tx_df.empty:
 else:
     st.info(T["no_data"])
 
-st.markdown("<br>", unsafe_allow_html=True)
+st.markdown("---")
 
 # --- MODUL 5: DASHBOARD INTERAKTIF ---
 st.markdown(f"### {T['dash_title']}")
@@ -522,9 +428,9 @@ if not tx_df.empty:
             names="Type", 
             title=T["pie_title"], 
             color="Type",
-            hole=0.6,
-            color_discrete_map={"Konsumtif": "#E11D48", "Non-Konsumtif": "#00A884"}
+            hole=0.6
         )
-        fig.update_traces(textposition='inside', textinfo='percent+label', marker=dict(line=dict(color='#FFFFFF', width=3)))
-        fig.update_layout(margin=dict(t=40, b=20, l=20, r=20), showlegend=True, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+        fig.update_traces(textposition='inside', textinfo='percent+label')
+        fig.update_layout(margin=dict(t=40, b=20, l=20, r=20), showlegend=True)
         st.plotly_chart(fig, use_container_width=True)
+        
