@@ -169,16 +169,16 @@ def init_database():
         ])
         
         wb_budget = pd.DataFrame([
-            {"Category_Code": "5101", "Category_Name": "Zakat & Sedekah", "Type": "Non-Konsumtif", "Target_Percent": 2.5, "Target_Budget": 0},
-            {"Category_Code": "5102", "Category_Name": "Transfer Orang Tua", "Type": "Non-Konsumtif", "Target_Percent": 21.05, "Target_Budget": 0},
-            {"Category_Code": "5103", "Category_Name": "Sewa Kost", "Type": "Non-Konsumtif", "Target_Percent": 12.28, "Target_Budget": 0},
-            {"Category_Code": "5104", "Category_Name": "Bayar Utang / Cicilan", "Type": "Non-Konsumtif", "Target_Percent": 15.79, "Target_Budget": 0},
-            {"Category_Code": "5105", "Category_Name": "Beban Pasangan / Pacar", "Type": "Konsumtif", "Target_Percent": 7.02, "Target_Budget": 0},
-            {"Category_Code": "5106", "Category_Name": "Beban Hiburan & Main", "Type": "Konsumtif", "Target_Percent": 7.02, "Target_Budget": 0},
-            {"Category_Code": "5107", "Category_Name": "Makan & Minum Harian", "Type": "Konsumtif", "Target_Percent": 21.05, "Target_Budget": 0},
-            {"Category_Code": "5108", "Category_Name": "Utilitas (Listrik/Internet)", "Type": "Non-Konsumtif", "Target_Percent": 4.39, "Target_Budget": 0},
-            {"Category_Code": "5109", "Category_Name": "Transportasi & Bensin", "Type": "Non-Konsumtif", "Target_Percent": 5.26, "Target_Budget": 0},
-            {"Category_Code": "1201", "Category_Name": "Tabungan / Investasi", "Type": "Non-Konsumtif", "Target_Percent": 7.15, "Target_Budget": 0},
+            {"Category_Code": "5101", "Category_Name": "Zakat & Sedekah", "Type": "Non-Konsumtif", "Target_Percent": 2.5, "Target_Budget": 0.0},
+            {"Category_Code": "5102", "Category_Name": "Transfer Orang Tua", "Type": "Non-Konsumtif", "Target_Percent": 21.05, "Target_Budget": 0.0},
+            {"Category_Code": "5103", "Category_Name": "Sewa Kost", "Type": "Non-Konsumtif", "Target_Percent": 12.28, "Target_Budget": 0.0},
+            {"Category_Code": "5104", "Category_Name": "Bayar Utang / Cicilan", "Type": "Non-Konsumtif", "Target_Percent": 15.79, "Target_Budget": 0.0},
+            {"Category_Code": "5105", "Category_Name": "Beban Pasangan / Pacar", "Type": "Konsumtif", "Target_Percent": 7.02, "Target_Budget": 0.0},
+            {"Category_Code": "5106", "Category_Name": "Beban Hiburan & Main", "Type": "Konsumtif", "Target_Percent": 7.02, "Target_Budget": 0.0},
+            {"Category_Code": "5107", "Category_Name": "Makan & Minum Harian", "Type": "Konsumtif", "Target_Percent": 21.05, "Target_Budget": 0.0},
+            {"Category_Code": "5108", "Category_Name": "Utilitas (Listrik/Internet)", "Type": "Non-Konsumtif", "Target_Percent": 4.39, "Target_Budget": 0.0},
+            {"Category_Code": "5109", "Category_Name": "Transportasi & Bensin", "Type": "Non-Konsumtif", "Target_Percent": 5.26, "Target_Budget": 0.0},
+            {"Category_Code": "1201", "Category_Name": "Tabungan / Investasi", "Type": "Non-Konsumtif", "Target_Percent": 7.15, "Target_Budget": 0.0},
         ])
         
         wb_tx = pd.DataFrame(columns=["TX_ID", "Date", "Type", "Account_From", "Account_To", "Category_Code", "Amount", "Notes"])
@@ -195,6 +195,8 @@ def load_data():
         budget = pd.read_excel(DB_FILE, sheet_name="Budget", dtype={"Category_Code": str})
         if "Target_Percent" not in budget.columns:
             budget["Target_Percent"] = 0.0
+        budget["Target_Percent"] = pd.to_numeric(budget["Target_Percent"], errors="coerce").fillna(0.0)
+        budget["Target_Budget"] = pd.to_numeric(budget["Target_Budget"], errors="coerce").fillna(0.0)
     except Exception:
         budget = pd.DataFrame(columns=["Category_Code", "Category_Name", "Type", "Target_Percent", "Target_Budget"])
     transactions = pd.read_excel(DB_FILE, sheet_name="Transactions", dtype={"Category_Code": str})
@@ -274,12 +276,11 @@ total_income = tx_df[tx_df["Type"] == "Pemasukan"]["Amount"].sum() if not tx_df.
 
 for idx, row in budget_df.iterrows():
     pct = float(row["Target_Percent"]) if pd.notnull(row["Target_Percent"]) else 0.0
-    # Zakat fix 2.5% atau sesuai input, target nominal dihitung otomatis dari total pemasukan
     if row["Category_Code"] == "5101":
         pct = 2.5
-        budget_df.loc[idx, "Target_Percent"] = 2.5
+        budget_df.at[idx, "Target_Percent"] = 2.5
     
-    budget_df.loc[idx, "Target_Budget"] = total_income * (pct / 100)
+    budget_df.at[idx, "Target_Budget"] = float(total_income) * (pct / 100.0)
 
 # --- MODUL 1: WALLET CARDS & TAMBAH AKUN ---
 if "show_balance" not in st.session_state:
@@ -300,7 +301,6 @@ for i, row in accounts_df.iterrows():
     balance_display = f"Rp {row['Current_Balance']:,.0f}".replace(",", ".") if st.session_state.show_balance else "Rp ••••••••"
     cols[i].metric(row["Account_Name"], balance_display)
 
-# Fitur Fleksibel: Tambah Rekening/Dompet Baru
 with st.expander(T["add_account"]):
     with st.form("add_account_form", clear_on_submit=True):
         ac_name = st.text_input(T["acc_name"])
@@ -313,7 +313,7 @@ with st.expander(T["add_account"]):
 
 st.markdown("---")
 
-# --- MODUL 2: FORM INPUT TRANSAKSI (DITARUH DI ATAS TARGET) ---
+# --- MODUL 2: FORM INPUT TRANSAKSI ---
 with st.expander(T["add_tx"], expanded=True):
     c_type1, c_type2 = st.columns([1, 2])
     tx_type_input = c_type1.selectbox(T["tx_type"], [T["expense"], T["income"], T["transfer"]])
@@ -366,7 +366,7 @@ with st.expander(T["add_tx"], expanded=True):
             st.success(T["success_save"])
             st.rerun()
 
-# --- MODUL 3: PENGATURAN TARGET & PERSENTASE (DI BAWAH INPUT TRANSAKSI) ---
+# --- MODUL 3: PENGATURAN TARGET & PERSENTASE ---
 with st.expander(T["setting_title"], expanded=False):
     st.write(T["setting_desc"])
     if total_income > 0:
@@ -393,10 +393,10 @@ with st.expander(T["setting_title"], expanded=False):
         if submit_setting:
             for idx, row in edited_budget_df.iterrows():
                 if row["Category_Code"] == "5101":
-                    edited_budget_df.loc[idx, "Target_Percent"] = 2.5
+                    edited_budget_df.at[idx, "Target_Percent"] = 2.5
                 
-                pct = float(edited_budget_df.loc[idx, "Target_Percent"])
-                edited_budget_df.loc[idx, "Target_Budget"] = total_income * (pct / 100)
+                pct = float(edited_budget_df.loc[idx, "Target_Percent"]) if pd.notnull(edited_budget_df.loc[idx, "Target_Percent"]) else 0.0
+                edited_budget_df.at[idx, "Target_Budget"] = float(total_income) * (pct / 100.0)
 
             update_budget_targets(edited_budget_df)
             st.success(T["success_setting"])
