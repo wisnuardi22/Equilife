@@ -43,7 +43,7 @@ T = {
         "save_account": "Simpan Rekening Baru",
         "success_acc": "Rekening baru berhasil ditambahkan!",
         "setting_title": "⚙️ Pengaturan Target Anggaran & Persentase (%)",
-        "setting_desc": "Ubah persentase (%) target pos anggaran. Nominal Rupiah akan otomatis menyesuaikan dengan total pemasukan bulan ini.",
+        "setting_desc": "Anda bisa mengisi langsung Persentase (%) atau Nominal (Rp) pada tabel di bawah. Keduanya akan saling menyesuaikan secara interaktif.",
         "save_setting": "Simpan Pengaturan Target",
         "success_setting": "Pengaturan target anggaran berhasil diperbarui!",
         "add_tx": "➕ Tambah Transaksi Baru (Input Cepat)",
@@ -102,7 +102,7 @@ T = {
         "save_account": "Save New Account",
         "success_acc": "New account added successfully!",
         "setting_title": "⚙️ Budget Target & Percentage (%) Settings",
-        "setting_desc": "Change expense category percentages (%). The Rupiah amounts will automatically adjust based on this month's total income.",
+        "setting_desc": "You can directly fill Percentage (%) or Amount (Rp) in the table below. Both auto-sync seamlessly.",
         "save_setting": "Save Target Settings",
         "success_setting": "Budget settings updated successfully!",
         "add_tx": "➕ Add New Transaction (Quick Input)",
@@ -170,15 +170,15 @@ def init_database():
         
         wb_budget = pd.DataFrame([
             {"Category_Code": "5101", "Category_Name": "Zakat & Sedekah", "Type": "Non-Konsumtif", "Target_Percent": 2.5, "Target_Budget": 0.0},
-            {"Category_Code": "5102", "Category_Name": "Transfer Orang Tua", "Type": "Non-Konsumtif", "Target_Percent": 21.05, "Target_Budget": 0.0},
-            {"Category_Code": "5103", "Category_Name": "Sewa Kost", "Type": "Non-Konsumtif", "Target_Percent": 12.28, "Target_Budget": 0.0},
-            {"Category_Code": "5104", "Category_Name": "Bayar Utang / Cicilan", "Type": "Non-Konsumtif", "Target_Percent": 15.79, "Target_Budget": 0.0},
-            {"Category_Code": "5105", "Category_Name": "Beban Pasangan / Pacar", "Type": "Konsumtif", "Target_Percent": 7.02, "Target_Budget": 0.0},
-            {"Category_Code": "5106", "Category_Name": "Beban Hiburan & Main", "Type": "Konsumtif", "Target_Percent": 7.02, "Target_Budget": 0.0},
-            {"Category_Code": "5107", "Category_Name": "Makan & Minum Harian", "Type": "Konsumtif", "Target_Percent": 21.05, "Target_Budget": 0.0},
-            {"Category_Code": "5108", "Category_Name": "Utilitas (Listrik/Internet)", "Type": "Non-Konsumtif", "Target_Percent": 4.39, "Target_Budget": 0.0},
-            {"Category_Code": "5109", "Category_Name": "Transportasi & Bensin", "Type": "Non-Konsumtif", "Target_Percent": 5.26, "Target_Budget": 0.0},
-            {"Category_Code": "1201", "Category_Name": "Tabungan / Investasi", "Type": "Non-Konsumtif", "Target_Percent": 7.15, "Target_Budget": 0.0},
+            {"Category_Code": "5102", "Category_Name": "Transfer Orang Tua", "Type": "Non-Konsumtif", "Target_Percent": 0.0, "Target_Budget": 0.0},
+            {"Category_Code": "5103", "Category_Name": "Sewa Kost", "Type": "Non-Konsumtif", "Target_Percent": 0.0, "Target_Budget": 0.0},
+            {"Category_Code": "5104", "Category_Name": "Bayar Utang / Cicilan", "Type": "Non-Konsumtif", "Target_Percent": 0.0, "Target_Budget": 0.0},
+            {"Category_Code": "5105", "Category_Name": "Beban Pasangan / Pacar", "Type": "Konsumtif", "Target_Percent": 0.0, "Target_Budget": 0.0},
+            {"Category_Code": "5106", "Category_Name": "Beban Hiburan & Main", "Type": "Konsumtif", "Target_Percent": 0.0, "Target_Budget": 0.0},
+            {"Category_Code": "5107", "Category_Name": "Makan & Minum Harian", "Type": "Konsumtif", "Target_Percent": 0.0, "Target_Budget": 0.0},
+            {"Category_Code": "5108", "Category_Name": "Utilitas (Listrik/Internet)", "Type": "Non-Konsumtif", "Target_Percent": 0.0, "Target_Budget": 0.0},
+            {"Category_Code": "5109", "Category_Name": "Transportasi & Bensin", "Type": "Non-Konsumtif", "Target_Percent": 0.0, "Target_Budget": 0.0},
+            {"Category_Code": "1201", "Category_Name": "Tabungan / Investasi", "Type": "Non-Konsumtif", "Target_Percent": 0.0, "Target_Budget": 0.0},
         ])
         
         wb_tx = pd.DataFrame(columns=["TX_ID", "Date", "Type", "Account_From", "Account_To", "Category_Code", "Amount", "Notes"])
@@ -195,7 +195,8 @@ def load_data():
         budget = pd.read_excel(DB_FILE, sheet_name="Budget", dtype={"Category_Code": str})
         if "Target_Percent" not in budget.columns:
             budget["Target_Percent"] = 0.0
-        # Paksa konversi kolom ke tipe numerik secara eksplisit
+        if "Target_Budget" not in budget.columns:
+            budget["Target_Budget"] = 0.0
         budget["Target_Percent"] = pd.to_numeric(budget["Target_Percent"], errors="coerce").fillna(0.0).astype(float)
         budget["Target_Budget"] = pd.to_numeric(budget["Target_Budget"], errors="coerce").fillna(0.0).astype(float)
     except Exception:
@@ -272,20 +273,25 @@ def add_new_account(acc_name, initial_bal):
 
 accounts_df, budget_df, tx_df = load_data()
 
-# Pastikan tipe data dataframe target konsisten float
-budget_df["Target_Percent"] = budget_df["Target_Percent"].astype(float)
-budget_df["Target_Budget"] = budget_df["Target_Budget"].astype(float)
-
-# --- SINKRONISASI TARGET BERDASARKAN TOTAL PEMASUKAN ---
+# --- TOTAL PEMASUKAN BULAN INI ---
 total_income = tx_df[tx_df["Type"] == "Pemasukan"]["Amount"].sum() if not tx_df.empty else 0
 
+# Sinkronisasi otomatis nilai jika belum tersimpan atau dihitung dari persen/rupiah yang ada
 for idx, row in budget_df.iterrows():
     pct = float(row["Target_Percent"])
+    bud = float(row["Target_Budget"])
+    
     if row["Category_Code"] == "5101":
         pct = 2.5
-        budget_df.loc[idx, "Target_Percent"] = 2.5
-    
-    budget_df.loc[idx, "Target_Budget"] = float(total_income) * (pct / 100.0)
+        budget_df.at[idx, "Target_Percent"] = 2.5
+        if total_income > 0:
+            budget_df.at[idx, "Target_Budget"] = total_income * (2.5 / 100.0)
+    else:
+        if total_income > 0:
+            if pct > 0 and bud == 0:
+                budget_df.at[idx, "Target_Budget"] = total_income * (pct / 100.0)
+            elif bud > 0 and pct == 0:
+                budget_df.at[idx, "Target_Percent"] = (bud / total_income) * 100.0
 
 # --- MODUL 1: WALLET CARDS & TAMBAH AKUN ---
 if "show_balance" not in st.session_state:
@@ -371,11 +377,11 @@ with st.expander(T["add_tx"], expanded=True):
             st.success(T["success_save"])
             st.rerun()
 
-# --- MODUL 3: PENGATURAN TARGET & PERSENTASE ---
+# --- MODUL 3: PENGATURAN TARGET & PERSENTASE (KEDUA KOLOM BISA DIEDIT BEBAS) ---
 with st.expander(T["setting_title"], expanded=False):
     st.write(T["setting_desc"])
     if total_income > 0:
-        st.info(f"Total Pemasukan (Gaji) Bulan Ini: **Rp {total_income:,.0f}** (Target otomatis mengikuti persentase dari nominal ini).".replace(",", "."))
+        st.info(f"Total Pemasukan (Gaji) Bulan Ini: **Rp {total_income:,.0f}** (Bisa isi Persentase % atau Nominal Rp secara fleksibel).".replace(",", "."))
     else:
         st.warning("Belum ada pemasukan tercatat. Silakan masukkan gaji/pemasukan terlebih dahulu pada menu input transaksi di atas.")
     
@@ -386,8 +392,8 @@ with st.expander(T["setting_title"], expanded=False):
                 "Category_Code": st.column_config.TextColumn("Kode", disabled=True),
                 "Category_Name": st.column_config.TextColumn("Kategori Pos", disabled=True),
                 "Type": st.column_config.TextColumn("Tipe", disabled=True),
-                "Target_Percent": st.column_config.NumberColumn("Target (%)", format="%.2f %%", min_value=0.0, max_value=100.0, step=0.1),
-                "Target_Budget": st.column_config.NumberColumn(T["target"], format="Rp %,d", disabled=True)
+                "Target_Budget": st.column_config.NumberColumn(T["target"], format="Rp %,d", min_value=0.0, step=10000.0),
+                "Target_Percent": st.column_config.NumberColumn("Target (%)", format="%.2f %%", min_value=0.0, max_value=100.0, step=0.1)
             },
             hide_index=True,
             use_container_width=True
@@ -402,9 +408,20 @@ with st.expander(T["setting_title"], expanded=False):
             for idx, row in edited_budget_df.iterrows():
                 if row["Category_Code"] == "5101":
                     edited_budget_df.loc[idx, "Target_Percent"] = 2.5
-                
-                pct = float(edited_budget_df.loc[idx, "Target_Percent"])
-                edited_budget_df.loc[idx, "Target_Budget"] = float(total_income) * (pct / 100.0)
+                    if total_income > 0:
+                        edited_budget_df.loc[idx, "Target_Budget"] = total_income * (2.5 / 100.0)
+                else:
+                    orig_pct = float(budget_df.loc[idx, "Target_Percent"])
+                    new_pct = float(edited_budget_df.loc[idx, "Target_Percent"])
+                    orig_bud = float(budget_df.loc[idx, "Target_Budget"])
+                    new_bud = float(edited_budget_df.loc[idx, "Target_Budget"])
+                    
+                    # Jika user mengubah nominal rupiah, hitung persentasenya
+                    if new_bud != orig_bud and total_income > 0:
+                        edited_budget_df.loc[idx, "Target_Percent"] = (new_bud / total_income) * 100.0
+                    # Jika user mengubah persentase, hitung nominal rupiahnya
+                    elif new_pct != orig_pct and total_income > 0:
+                        edited_budget_df.loc[idx, "Target_Budget"] = total_income * (new_pct / 100.0)
 
             update_budget_targets(edited_budget_df)
             st.success(T["success_setting"])
