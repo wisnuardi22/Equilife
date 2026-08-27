@@ -5,7 +5,7 @@ import os
 from datetime import datetime
 from PIL import Image
 
-# --- CONFIG ---
+# --- CONFIG & THEME ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 logo_path = os.path.join(BASE_DIR, "image", "logo.png")
 
@@ -20,6 +20,54 @@ st.set_page_config(
     page_icon=logo_img
 )
 
+# --- CUSTOM MODERN CSS STYLING ---
+st.markdown("""
+<style>
+    /* Main Background & Font Styling */
+    .stApp {
+        background-color: #F8FAFC;
+        font-family: 'Inter', sans-serif;
+    }
+    
+    /* Header Container Styling */
+    .main-header {
+        background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+        padding: 24px;
+        border-radius: 16px;
+        color: white;
+        margin-bottom: 24px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+    
+    /* Metric Cards Styling */
+    [data-testid="stMetricValue"] {
+        font-weight: 700;
+        color: #0F172A;
+    }
+    
+    div[data-testid="metric-container"] {
+        background-color: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        padding: 16px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        transition: transform 0.2s ease;
+    }
+    
+    div[data-testid="metric-container"]:hover {
+        transform: translateY(-2px);
+        border-color: #00A86B;
+    }
+    
+    /* Buttons Customization */
+    .stButton>button {
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 # --- HEADER & LANGUAGE SELECTOR (TOP RIGHT) ---
 col_logo, col_title, col_lang = st.columns([1, 8, 3])
 
@@ -30,7 +78,7 @@ with col_logo:
 with col_lang:
     lang_choice = st.selectbox("🌐 Language / Bahasa", ["Bahasa Indonesia 🇮🇩", "English 🇬🇧"], label_visibility="collapsed")
 
-# Kamus Penerjemah Teks UI
+# Kamus Penerjemah Teks UI (Status Elegan)
 T = {
     "Bahasa Indonesia 🇮🇩": {
         "title": "Equilife — Personal Financial Balance",
@@ -43,29 +91,32 @@ T = {
         "expense": "Pengeluaran",
         "income": "Pemasukan",
         "transfer": "Transfer Antar Rekening",
-        "date": "Tanggal",
+        "date": "Tanggal (dd/mm/yyyy)",
         "acc_from": "Sumber Rekening",
         "acc_to": "Rekening Tujuan",
         "from_acc": "Dari Rekening",
         "to_acc": "Ke Rekening",
         "category": "Kategori Pos Pengeluaran",
         "not_needed": "- (Tidak Dibutuhkan)",
-        "amount": "Nominal (Rp)",
+        "amount": "Nominal Transaksi (Rp)",
         "notes": "Keterangan",
         "save": "💾 Simpan Transaksi",
         "success_save": "Transaksi berhasil disimpan!",
-        "correct_title": "🗑️ **Koreksi / Hapus Transaksi Salah**",
-        "correct_desc": "Pilih transaksi di bawah ini untuk menghapusnya (saldo akan otomatis dikembalikan):",
-        "select_tx_del": "Pilih Transaksi yang Akan Dihapus:",
+        "correct_title": "✏️ **Koreksi Transaksi (Edit / Hapus)**",
+        "correct_desc": "Pilih transaksi di bawah ini untuk mengedit atau menghapusnya (saldo rekening akan otomatis disesuaikan):",
+        "select_tx": "Pilih Transaksi:",
+        "btn_edit": "✏️ Edit Transaksi Ini",
         "btn_del": "❌ Hapus Transaksi Ini",
         "success_del": "berhasil dihapus dan saldo rekening dikembalikan!",
+        "success_edit": "berhasil diperbarui dan saldo telah disesuaikan!",
+        "save_changes": "💾 Simpan Perubahan Edit",
         "budget_vs_act": "📋 Monitoring Target Anggaran (Budget vs Actual)",
         "target": "Target (Rp)",
         "actual": "Realisasi (Rp)",
         "remaining": "Sisa (Rp)",
-        "status": "Status",
-        "safe": "🟢 Aman",
-        "over": "🔴 Overbudget",
+        "status": "Status Anggaran",
+        "status_safe": "🟢 Terpenuhi",
+        "status_over": "🔴 Melampaui Batas",
         "dash_title": "📊 Dashboard Interaktif & Analisis Konsumtif",
         "filter_mode": "Tampilkan Berdasarkan Filter:",
         "monthly": "Bulanan",
@@ -73,10 +124,10 @@ T = {
         "week_num": "Pilih Minggu ke-",
         "lifestyle_ratio": "**Indikator Tingkat Konsumtif**",
         "life_metric": "Rasio Pengeluaran Lifestyle",
-        "wise": "🟢 Bijak",
-        "warning": "🟡 Waspada",
-        "high_cons": "🔴 Konsumtif Tinggi",
-        "pie_title": "Proporsi Pengeluaran",
+        "wise": "🟢 Proporsional",
+        "warning": "🟡 Perlu Perhatian",
+        "high_cons": "🔴 Tingkat Konsumtif Tinggi",
+        "pie_title": "Proporsi Alokasi Pengeluaran",
         "no_data": "Belum ada data transaksi. Silakan input transaksi pertama kamu di atas!"
     },
     "English 🇬🇧": {
@@ -90,29 +141,32 @@ T = {
         "expense": "Expense",
         "income": "Income",
         "transfer": "Transfer Between Accounts",
-        "date": "Date",
+        "date": "Date (dd/mm/yyyy)",
         "acc_from": "Source Account",
         "acc_to": "Destination Account",
         "from_acc": "From Account",
         "to_acc": "To Account",
         "category": "Expense Category",
         "not_needed": "- (Not Required)",
-        "amount": "Amount (Rp)",
+        "amount": "Transaction Amount (Rp)",
         "notes": "Notes",
         "save": "💾 Save Transaction",
         "success_save": "Transaction saved successfully!",
-        "correct_title": "🗑️ **Correction / Delete Wrong Transaction**",
-        "correct_desc": "Select a transaction below to delete it (account balances will be automatically restored):",
-        "select_tx_del": "Select Transaction to Delete:",
+        "correct_title": "✏️ **Transaction Correction (Edit / Delete)**",
+        "correct_desc": "Select a transaction below to edit or delete it (account balances will automatically adjust):",
+        "select_tx": "Select Transaction:",
+        "btn_edit": "✏️ Edit This Transaction",
         "btn_del": "❌ Delete This Transaction",
         "success_del": "deleted successfully and balance restored!",
+        "success_edit": "updated successfully and balance adjusted!",
+        "save_changes": "💾 Save Edited Changes",
         "budget_vs_act": "📋 Budget Target Monitoring (Budget vs Actual)",
         "target": "Target (Rp)",
         "actual": "Actual (Rp)",
         "remaining": "Remaining (Rp)",
-        "status": "Status",
-        "safe": "🟢 Safe",
-        "over": "🔴 Overbudget",
+        "status": "Budget Status",
+        "status_safe": "🟢 Target Met",
+        "status_over": "🔴 Exceeded",
         "dash_title": "📊 Interactive Dashboard & Consumption Analysis",
         "filter_mode": "Display Filtered By:",
         "monthly": "Monthly",
@@ -120,10 +174,10 @@ T = {
         "week_num": "Select Week No.",
         "lifestyle_ratio": "**Lifestyle Consumption Indicator**",
         "life_metric": "Lifestyle Spending Ratio",
-        "wise": "🟢 Wise",
-        "warning": "🟡 Caution",
-        "high_cons": "🔴 High Consumption",
-        "pie_title": "Expense Ratio",
+        "wise": "🟢 Proportional",
+        "warning": "🟡 Attention Needed",
+        "high_cons": "🔴 High Consumption Level",
+        "pie_title": "Expense Allocation Ratio",
         "no_data": "No transaction data available yet. Please add your first transaction above!"
     }
 }[lang_choice]
@@ -134,7 +188,7 @@ with col_title:
 
 DB_FILE = os.path.join(BASE_DIR, "database.xlsx")
 
-# --- DATABASE HELPER FUNCTIONS ---
+# --- DATABASE FUNCTIONS ---
 def init_database():
     if not os.path.exists(DB_FILE):
         wb_accounts = pd.DataFrame([
@@ -213,6 +267,10 @@ def delete_transaction(tx_id):
             budget.to_excel(writer, sheet_name="Budget", index=False)
             transactions.to_excel(writer, sheet_name="Transactions", index=False)
 
+def update_transaction(updated_tx):
+    delete_transaction(updated_tx["TX_ID"])
+    save_transaction(updated_tx)
+
 accounts_df, budget_df, tx_df = load_data()
 
 # --- MODUL 1: WALLET CARDS ---
@@ -231,11 +289,7 @@ with c_toggle:
 
 cols = st.columns(len(accounts_df))
 for i, row in accounts_df.iterrows():
-    if st.session_state.show_balance:
-        balance_display = f"Rp {row['Current_Balance']:,.0f}".replace(",", ".")
-    else:
-        balance_display = "Rp ••••••••"
-        
+    balance_display = f"Rp {row['Current_Balance']:,.0f}".replace(",", ".") if st.session_state.show_balance else "Rp ••••••••"
     cols[i].metric(row["Account_Name"], balance_display)
 
 st.markdown("---")
@@ -247,7 +301,8 @@ with st.expander(T["add_tx"], expanded=True):
 
     with st.form("add_tx_form", clear_on_submit=True):
         c1, c2 = st.columns(2)
-        tx_date = c1.date_input(T["date"], datetime.now())
+        # 1. Format Tanggal dd/mm/yyyy
+        tx_date = c1.date_input(T["date"], datetime.now(), format="DD/MM/YYYY")
         
         acc_list = accounts_df["Account_Name"].tolist()
         if tx_type_input == T["expense"]:
@@ -270,7 +325,10 @@ with st.expander(T["add_tx"], expanded=True):
             c4.text_input(T["category"], value=T["not_needed"], disabled=True)
             cat_code = "-"
         
-        amount = c5.number_input(T["amount"], min_value=0, value=50000, step=5000)
+        # 2. Input Nominal Full Amount & Format Titik Otomatis
+        amount = c5.number_input(T["amount"], min_value=0, value=50000, step=50000)
+        c5.caption(f"Terbaca: **Rp {amount:,.0f}**.replace(',', '.')")
+        
         notes = c6.text_input(T["notes"], "")
         
         submit = st.form_submit_button(T["save"])
@@ -279,7 +337,7 @@ with st.expander(T["add_tx"], expanded=True):
             tx_id = f"TX-{len(tx_df)+1:04d}"
             new_record = {
                 "TX_ID": tx_id,
-                "Date": tx_date.strftime("%Y-%m-%d"),
+                "Date": tx_date.strftime("%d/%m/%Y"),
                 "Type": "Pengeluaran" if tx_type_input == T["expense"] else ("Pemasukan" if tx_type_input == T["income"] else "Transfer Antar Rekening"),
                 "Account_From": acc_from,
                 "Account_To": acc_to,
@@ -291,18 +349,64 @@ with st.expander(T["add_tx"], expanded=True):
             st.success(T["success_save"])
             st.rerun()
 
-# --- MODUL 3: KOREKSI / HAPUS TRANSAKSI ---
+# --- MODUL 3: KOREKSI TRANSAKSI (EDIT & HAPUS) ---
+if "edit_active_id" not in st.session_state:
+    st.session_state.edit_active_id = None
+
 if not tx_df.empty:
     with st.expander(T["correct_title"]):
         st.write(T["correct_desc"])
         tx_options = tx_df.apply(lambda r: f"{r['TX_ID']} | {r['Date']} | {r['Type']} | Rp {r['Amount']:,.0f} | {r['Notes']}", axis=1)
-        selected_tx = st.selectbox(T["select_tx_del"], tx_options)
+        selected_tx_str = st.selectbox(T["select_tx"], tx_options)
+        selected_tx_id = selected_tx_str.split(" | ")[0]
         
-        if st.button(T["btn_del"]):
-            selected_tx_id = selected_tx.split(" | ")[0]
+        col_btn1, col_btn2 = st.columns(2)
+        if col_btn1.button(T["btn_edit"], use_container_width=True):
+            st.session_state.edit_active_id = selected_tx_id
+
+        if col_btn2.button(T["btn_del"], use_container_width=True):
             delete_transaction(selected_tx_id)
+            st.session_state.edit_active_id = None
             st.success(f"{selected_tx_id} {T['success_del']}")
             st.rerun()
+
+        # 4. Form Edit Aktif & Responsif
+        if st.session_state.edit_active_id:
+            tx_row = tx_df[tx_df["TX_ID"] == st.session_state.edit_active_id].iloc[0]
+            st.markdown("---")
+            st.markdown(f"#### ✏️ Edit Form: **{st.session_state.edit_active_id}**")
+            
+            with st.form("edit_tx_form"):
+                ec1, ec2 = st.columns(2)
+                
+                # Handling format tanggal string / date
+                try:
+                    init_date = datetime.strptime(str(tx_row["Date"]), "%d/%m/%Y")
+                except Exception:
+                    init_date = datetime.now()
+                    
+                e_date = ec1.date_input(T["date"], init_date, format="DD/MM/YYYY")
+                e_amount = ec2.number_input(T["amount"], min_value=0, value=int(tx_row["Amount"]), step=50000)
+                ec2.caption(f"Terbaca: **Rp {e_amount:,.0f}**.replace(',', '.')")
+                
+                e_notes = st.text_input(T["notes"], value=str(tx_row["Notes"]))
+                e_submit = st.form_submit_button(T["save_changes"])
+                
+                if e_submit:
+                    updated_record = {
+                        "TX_ID": st.session_state.edit_active_id,
+                        "Date": e_date.strftime("%d/%m/%Y"),
+                        "Type": tx_row["Type"],
+                        "Account_From": tx_row["Account_From"],
+                        "Account_To": tx_row["Account_To"],
+                        "Category_Code": str(tx_row["Category_Code"]),
+                        "Amount": e_amount,
+                        "Notes": e_notes
+                    }
+                    update_transaction(updated_record)
+                    st.session_state.edit_active_id = None
+                    st.success(f"{st.session_state.edit_active_id} {T['success_edit']}")
+                    st.rerun()
 
 st.markdown("---")
 
@@ -310,16 +414,17 @@ st.markdown("---")
 st.markdown(f"### {T['budget_vs_act']}")
 
 if not tx_df.empty:
-    tx_df["Date"] = pd.to_datetime(tx_df["Date"])
-    tx_df["Week"] = tx_df["Date"].dt.isocalendar().week
-    filtered_tx = tx_df[tx_df["Type"] == "Pengeluaran"]
+    tx_df_calc = tx_df.copy()
+    filtered_tx = tx_df_calc[tx_df_calc["Type"] == "Pengeluaran"]
         
     merged_budget = budget_df.copy()
     actual_spending = filtered_tx.groupby("Category_Code")["Amount"].sum().reset_index()
     merged_budget = pd.merge(merged_budget, actual_spending, on="Category_Code", how="left").fillna(0)
     merged_budget.rename(columns={"Amount": "Actual_Spending"}, inplace=True)
     merged_budget["Remaining"] = merged_budget["Target_Budget"] - merged_budget["Actual_Spending"]
-    merged_budget["Status"] = merged_budget["Remaining"].apply(lambda x: T["safe"] if x >= 0 else T["over"])
+    
+    # 5. Status Elegan
+    merged_budget["Status"] = merged_budget["Remaining"].apply(lambda x: T["status_safe"] if x >= 0 else T["status_over"])
 
     st.dataframe(
         merged_budget[["Category_Code", "Category_Name", "Target_Budget", "Actual_Spending", "Remaining", "Status"]],
@@ -337,18 +442,21 @@ else:
 
 st.markdown("---")
 
-# --- MODUL 5: DASHBOARD INTERAKTIF & ANALISIS KONSUMTIF ---
+# --- MODUL 5: DASHBOARD INTERAKTIF & ANALISIS KONSUMTIF (MODERN 3D/DONUT) ---
 st.markdown(f"### {T['dash_title']}")
 
 if not tx_df.empty:
-    # Filter Controls inside Main Dashboard Area
+    tx_df["Parsed_Date"] = pd.to_datetime(tx_df["Date"], format="%d/%m/%Y", errors="coerce")
+    tx_df["Week"] = tx_df["Parsed_Date"].dt.isocalendar().week
+    
     f_col1, f_col2 = st.columns([3, 3])
     with f_col1:
         view_mode = st.radio(T["filter_mode"], [T["monthly"], T["weekly"]], horizontal=True)
     
     if view_mode == T["weekly"]:
         with f_col2:
-            selected_week = st.selectbox(T["week_num"], sorted(tx_df["Week"].unique()))
+            available_weeks = sorted(tx_df["Week"].dropna().unique())
+            selected_week = st.selectbox(T["week_num"], available_weeks if available_weeks else [1])
             dash_tx = tx_df[(tx_df["Week"] == selected_week) & (tx_df["Type"] == "Pengeluaran")]
     else:
         dash_tx = tx_df[tx_df["Type"] == "Pengeluaran"]
@@ -370,7 +478,17 @@ if not tx_df.empty:
         st.metric(T["life_metric"], f"{ratio_konsumtif:.1f}%", f"Status: {status_color}")
         
     with c_chart:
+        # 6. Modern Donut Chart dengan Modern Palette
         chart_data = dash_budget.groupby("Type")["Actual_Spending"].sum().reset_index()
-        fig = px.pie(chart_data, values="Actual_Spending", names="Type", title=T["pie_title"], color="Type",
-                     color_discrete_map={"Konsumtif": "#FF4B4B", "Non-Konsumtif": "#00C853"})
+        fig = px.pie(
+            chart_data, 
+            values="Actual_Spending", 
+            names="Type", 
+            title=T["pie_title"], 
+            color="Type",
+            hole=0.55, # Donut Chart Style
+            color_discrete_map={"Konsumtif": "#E11D48", "Non-Konsumtif": "#00A86B"}
+        )
+        fig.update_traces(textposition='inside', textinfo='percent+label', marker=dict(line=dict(color='#FFFFFF', width=2)))
+        fig.update_layout(margin=dict(t=40, b=20, l=20, r=20), showlegend=True)
         st.plotly_chart(fig, use_container_width=True)
