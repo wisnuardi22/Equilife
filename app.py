@@ -5,29 +5,32 @@ import os
 from datetime import datetime
 from PIL import Image
 
-# Load logo image
-logo_path = os.path.join(os.path.dirname(__file__), 'logo.png')
-if os.path.exists(logo_path):
-    logo_image = Image.open(logo_path) 
+# --- CONFIG & HEADER ---
+# Menentukan lokasi root proyek secara tepat
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+logo_path = os.path.join(BASE_DIR, "image", "logo.png")
 
-# Set page configuration
+# Memuat gambar
+try:
+    logo_img = Image.open(logo_path)
+except Exception:
+    logo_img = "📊"
+
 st.set_page_config(
-    page_title="Equilife - Financial Balance",
-    page_icon=logo_image if os.path.exists(logo_path) else None,
-    layout="wide",
+    page_title="Equilife - Financial Balance", 
+    layout="wide", 
+    page_icon=logo_img
 )
 
-# display logo and title
+# --- DISPLAY LOGO & TITLE ---
 col_logo, col_title = st.columns([1, 12])
 
 with col_logo:
-    if os.path.exists(logo_path):
-        st.image(logo_image, width=65)  # Adjust the width as needed
-    else:
-        st.write("Logo not found.")
+    if isinstance(logo_img, Image.Image):
+        st.image(logo_img, width=65)
 
 with col_title:
-    st.title("Equilife - Financial Balance")
+    st.title("Equilife — Personal Financial Balance")
     st.caption("Your personal financial dashboard to track income, expenses, and savings.")
 
 DB_FILE = "database.xlsx"
