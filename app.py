@@ -128,31 +128,35 @@ st.markdown("---")
 
 # --- MODUL 2: FORM INPUT TRANSAKSI ---
 with st.expander("➕ **Tambah Transaksi Baru (Input Cepat)**", expanded=True):
+    # 1. Pilih Jenis Transaksi di LUAR form agar UI langsung berubah secara interaktif
+    c_type1, c_type2 = st.columns([1, 2])
+    tx_type = c_type1.selectbox("Jenis Transaksi", ["Pengeluaran", "Pemasukan", "Transfer Antar Rekening"])
+
+    # 2. Form Input Utama
     with st.form("add_tx_form", clear_on_submit=True):
-        c1, c2, c3 = st.columns(3)
+        c1, c2 = st.columns(2)
         tx_date = c1.date_input("Tanggal", datetime.now())
-        tx_type = c2.selectbox("Jenis Transaksi", ["Pengeluaran", "Pemasukan", "Transfer Antar Rekening"])
         
         acc_list = accounts_df["Account_Name"].tolist()
         if tx_type == "Pengeluaran":
-            acc_from = c3.selectbox("Sumber Rekening", acc_list)
+            acc_from = c2.selectbox("Sumber Rekening", acc_list)
             acc_to = "-"
         elif tx_type == "Pemasukan":
             acc_from = "-"
-            acc_to = c3.selectbox("Rekening Tujuan", acc_list)
+            acc_to = c2.selectbox("Rekening Tujuan", acc_list)
         else:
-            acc_from = c3.selectbox("Dari Rekening", acc_list, index=0)
-            acc_to = c3.selectbox("Ke Rekening", acc_list, index=1)
+            acc_from = c2.selectbox("Dari Rekening", acc_list, index=0)
+            acc_to = c2.selectbox("Ke Rekening", acc_list, index=1)
             
         c4, c5, c6 = st.columns([3, 2, 4])
         
-        # Kategori HANYA MUNCUL jika jenis transaksi adalah Pengeluaran
+        # Dropdown Kategori HANYA tampil jika jenis transaksi adalah Pengeluaran
         if tx_type == "Pengeluaran":
             cat_options = budget_df["Category_Code"].astype(str) + " - " + budget_df["Category_Name"]
             cat_selected = c4.selectbox("Kategori Pos Pengeluaran", cat_options)
             cat_code = cat_selected.split(" - ")[0]
         else:
-            cat_selected = c4.text_input("Kategori Pos Pengeluaran", value="-", disabled=True)
+            c4.text_input("Kategori Pos Pengeluaran", value="- (Tidak Dibutuhkan)", disabled=True)
             cat_code = "-"
         
         amount = c5.number_input("Nominal (Rp)", min_value=0, value=50000, step=5000)
