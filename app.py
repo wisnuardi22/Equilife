@@ -136,7 +136,7 @@ T = {
         "status": "Budget Status",
         "status_safe": "Target Met",
         "status_over": "Exceeded",
-        "dash_title": "📊 Interactive Dashboard & Consumption Analysis",
+        "dash_title": "📊 Dashboard Interaktif & Analisis Konsumtif",
         "filter_mode": "Display Filtered By:",
         "monthly": "Monthly",
         "weekly": "Weekly",
@@ -170,15 +170,15 @@ def init_database():
         
         wb_budget = pd.DataFrame([
             {"Category_Code": "5101", "Category_Name": "Zakat & Sedekah", "Type": "Non-Konsumtif", "Target_Percent": 2.5, "Target_Budget": 0.0},
-            {"Category_Code": "5102", "Category_Name": "Transfer Orang Tua", "Type": "Non-Konsumtif", "Target_Percent": 21.05, "Target_Budget": 0.0},
-            {"Category_Code": "5103", "Category_Name": "Sewa Kost", "Type": "Non-Konsumtif", "Target_Percent": 12.28, "Target_Budget": 0.0},
-            {"Category_Code": "5104", "Category_Name": "Bayar Utang / Cicilan", "Type": "Non-Konsumtif", "Target_Percent": 15.79, "Target_Budget": 0.0},
-            {"Category_Code": "5105", "Category_Name": "Beban Pasangan / Pacar", "Type": "Konsumtif", "Target_Percent": 7.02, "Target_Budget": 0.0},
-            {"Category_Code": "5106", "Category_Name": "Beban Hiburan & Main", "Type": "Konsumtif", "Target_Percent": 7.02, "Target_Budget": 0.0},
-            {"Category_Code": "5107", "Category_Name": "Makan & Minum Harian", "Type": "Konsumtif", "Target_Percent": 21.05, "Target_Budget": 0.0},
-            {"Category_Code": "5108", "Category_Name": "Utilitas (Listrik/Internet)", "Type": "Non-Konsumtif", "Target_Percent": 4.39, "Target_Budget": 0.0},
-            {"Category_Code": "5109", "Category_Name": "Transportasi & Bensin", "Type": "Non-Konsumtif", "Target_Percent": 5.26, "Target_Budget": 0.0},
-            {"Category_Code": "1201", "Category_Name": "Tabungan / Investasi", "Type": "Non-Konsumtif", "Target_Percent": 7.15, "Target_Budget": 0.0},
+            {"Category_Code": "5102", "Category_Name": "Transfer Orang Tua", "Type": "Non-Konsumtif", "Target_Percent": 0.0, "Target_Budget": 0.0},
+            {"Category_Code": "5103", "Category_Name": "Sewa Kost", "Type": "Non-Konsumtif", "Target_Percent": 0.0, "Target_Budget": 0.0},
+            {"Category_Code": "5104", "Category_Name": "Bayar Utang / Cicilan", "Type": "Non-Konsumtif", "Target_Percent": 0.0, "Target_Budget": 0.0},
+            {"Category_Code": "5105", "Category_Name": "Beban Pasangan / Pacar", "Type": "Konsumtif", "Target_Percent": 0.0, "Target_Budget": 0.0},
+            {"Category_Code": "5106", "Category_Name": "Beban Hiburan & Main", "Type": "Konsumtif", "Target_Percent": 0.0, "Target_Budget": 0.0},
+            {"Category_Code": "5107", "Category_Name": "Makan & Minum Harian", "Type": "Konsumtif", "Target_Percent": 0.0, "Target_Budget": 0.0},
+            {"Category_Code": "5108", "Category_Name": "Utilitas (Listrik/Internet)", "Type": "Non-Konsumtif", "Target_Percent": 0.0, "Target_Budget": 0.0},
+            {"Category_Code": "5109", "Category_Name": "Transportasi & Bensin", "Type": "Non-Konsumtif", "Target_Percent": 0.0, "Target_Budget": 0.0},
+            {"Category_Code": "1201", "Category_Name": "Tabungan / Investasi", "Type": "Non-Konsumtif", "Target_Percent": 0.0, "Target_Budget": 0.0},
         ])
         
         wb_tx = pd.DataFrame(columns=["TX_ID", "Date", "Type", "Account_From", "Account_To", "Category_Code", "Amount", "Notes"])
@@ -360,7 +360,7 @@ with st.expander(T["add_tx"], expanded=True):
             st.success(T["success_save"])
             st.rerun()
 
-# --- MODUL 3: PENGATURAN TARGET DENGAN LIVE CALCULATION (BARIS INTERAKTIF) ---
+# --- MODUL 3: PENGATURAN TARGET DENGAN LIVE CALCULATION RESPONSIF ---
 with st.expander(T["setting_title"], expanded=True):
     st.write(T["setting_desc"])
     if total_income > 0:
@@ -368,11 +368,9 @@ with st.expander(T["setting_title"], expanded=True):
     else:
         st.warning("Belum ada pemasukan tercatat. Silakan masukkan gaji/pemasukan terlebih dahulu pada menu input transaksi di atas.")
 
-    # Inisialisasi state penyimpanan data live budget
     if "live_budget" not in st.session_state or len(st.session_state.live_budget) != len(budget_df):
         st.session_state.live_budget = budget_df.copy()
 
-    # Header Tabel Interaktif
     h1, h2, h3, h4 = st.columns([1, 3, 3, 3])
     h1.markdown("**Kode**")
     h2.markdown("**Kategori Pos**")
@@ -396,52 +394,50 @@ with st.expander(T["setting_title"], expanded=True):
             old_pct = 2.5
             if total_income > 0:
                 old_rp = total_income * 0.025
-            c3.text(f"Rp {old_rp:,.0f}".replace(",", "."))
-            c4.text(f"{old_pct:.2f}%")
+            c3.markdown(f"**Rp {old_rp:,.0f}**".replace(",", "."))
+            c4.markdown(f"**{old_pct:.2f}%**")
             new_rp, new_pct = old_rp, old_pct
         else:
-            # Gunakan key terpisah agar Streamlit mendeteksi perubahan nilai secara instan (live rerun)
             key_rp = f"rp_{idx}"
             key_pct = f"pct_{idx}"
             
-            # Jika belum ada di session state widget, daftarkan nilainya
             if key_rp not in st.session_state:
                 st.session_state[key_rp] = old_rp
             if key_pct not in st.session_state:
                 st.session_state[key_pct] = old_pct
 
-            # Callback interaktif untuk live calculation
-            def make_callback(r_key, p_key, is_rp):
-                def callback():
-                    if total_income > 0:
-                        if is_rp:
-                            val = st.session_state[r_key]
-                            st.session_state[p_key] = (val / total_income) * 100.0
-                        else:
-                            val = st.session_state[p_key]
-                            st.session_state[r_key] = total_income * (val / 100.0)
-                return callback
-
-            # Widget Input Angka dengan format pemisah ribuan
-            new_rp = c3.number_input(
+            # Logika Live Calculation Instan saat nilai diubah
+            val_rp_input = c3.number_input(
                 f"Rp {idx}", 
                 value=float(st.session_state[key_rp]), 
                 step=10000.0, 
                 format="%.0f", 
                 label_visibility="collapsed", 
-                key=key_rp,
-                on_change=make_callback(key_rp, key_pct, True)
+                key=key_rp
             )
             
-            new_pct = c4.number_input(
+            val_pct_input = c4.number_input(
                 f"% {idx}", 
                 value=float(st.session_state[key_pct]), 
                 step=0.1, 
                 format="%.2f", 
                 label_visibility="collapsed", 
-                key=key_pct,
-                on_change=make_callback(key_rp, key_pct, False)
+                key=key_pct
             )
+
+            # Jika user mengubah nominal Rupiah
+            if val_rp_input != old_rp:
+                new_rp = val_rp_input
+                new_pct = (new_rp / total_income) * 100.0 if total_income > 0 else 0.0
+                st.session_state[key_pct] = new_pct
+            # Jika user mengubah persentase
+            elif val_pct_input != old_pct:
+                new_pct = val_pct_input
+                new_rp = total_income * (new_pct / 100.0) if total_income > 0 else 0.0
+                st.session_state[key_rp] = new_rp
+            else:
+                new_rp = old_rp
+                new_pct = old_pct
 
         total_pct_sum += new_pct
         total_rp_sum += new_rp
